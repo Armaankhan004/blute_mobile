@@ -1,6 +1,15 @@
+import 'package:blute_mobile/features/home/presentation/screens/booking_confirmation_screen.dart';
+import 'package:blute_mobile/features/home/presentation/screens/booking_success_screen.dart';
+import 'package:blute_mobile/features/home/presentation/screens/home_screen.dart';
+import 'package:blute_mobile/features/home/presentation/screens/profile_screen.dart';
+import 'package:blute_mobile/features/home/presentation/screens/slot_details_screen.dart';
+import 'package:blute_mobile/features/home/presentation/screens/slot_selection_screen.dart';
+import 'package:blute_mobile/features/onboarding/presentation/screens/bank_details_screen.dart';
 import 'package:blute_mobile/features/onboarding/presentation/screens/document_upload_screen.dart';
 import 'package:blute_mobile/features/onboarding/presentation/screens/profile_setup_screen.dart';
+import 'package:blute_mobile/features/onboarding/presentation/screens/success_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:blute_mobile/core/di/injection_container.dart' as di;
 import 'package:blute_mobile/core/theme/app_theme.dart';
@@ -31,6 +40,16 @@ class MyApp extends StatelessWidget {
           '/otp': (context) => const OtpScreen(),
           '/profile-setup': (context) => ProfileSetupScreen(),
           '/document-upload': (context) => DocumentUploadScreen(),
+          '/bank-details': (context) => const BankDetailsScreen(),
+          '/home': (context) => const HomeScreen(),
+          '/profile': (context) => const ProfileScreen(),
+
+          '/success': (context) => const SuccessScreen(),
+          '/slot-details': (context) => const SlotDetailsScreen(),
+          '/slot-selection': (context) => const SlotSelectionScreen(),
+          '/booking-confirmation': (context) =>
+              const BookingConfirmationScreen(),
+          '/booking-success': (context) => const BookingSuccessScreen(),
         },
         home: const SplashScreen(),
       ),
@@ -55,7 +74,13 @@ class _SplashScreenState extends State<SplashScreen> {
   _navigateToLogin() async {
     await Future.delayed(const Duration(seconds: 2));
     if (mounted) {
-      Navigator.pushReplacementNamed(context, '/login');
+      final prefs = await SharedPreferences.getInstance();
+      final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+      if (isLoggedIn) {
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        Navigator.pushReplacementNamed(context, '/login');
+      }
     }
   }
 

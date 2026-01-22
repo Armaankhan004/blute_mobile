@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:blute_mobile/core/theme/app_colors.dart';
 import 'package:blute_mobile/features/auth/presentation/bloc/auth_bloc.dart';
@@ -74,6 +75,9 @@ class _OtpScreenState extends State<OtpScreen> {
     return BlocConsumer<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is AuthAuthenticated) {
+          SharedPreferences.getInstance().then((prefs) {
+            prefs.setBool('isLoggedIn', true);
+          });
           Navigator.pushReplacementNamed(context, '/profile-setup');
           ScaffoldMessenger.of(
             context,

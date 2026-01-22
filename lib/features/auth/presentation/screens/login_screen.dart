@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:blute_mobile/core/theme/app_colors.dart';
 import 'package:blute_mobile/features/auth/presentation/bloc/auth_bloc.dart';
@@ -17,10 +18,26 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _phoneController = TextEditingController();
+  final FocusNode _phoneFocusNode = FocusNode();
   final _formKey = GlobalKey<FormState>();
+  bool _isPhoneFocused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _phoneFocusNode.addListener(_onFocusChange);
+  }
+
+  void _onFocusChange() {
+    setState(() {
+      _isPhoneFocused = _phoneFocusNode.hasFocus;
+    });
+  }
 
   @override
   void dispose() {
+    _phoneFocusNode.removeListener(_onFocusChange);
+    _phoneFocusNode.dispose();
     _phoneController.dispose();
     super.dispose();
   }
@@ -88,14 +105,20 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 32),
                     CustomTextField(
                       controller: _phoneController,
+                      focusNode: _phoneFocusNode,
                       hintText: 'Phone number',
+                      prefixText: _isPhoneFocused ? '+91 ' : null,
                       keyboardType: TextInputType.phone,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(10),
+                      ],
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Please enter your phone number';
                         }
-                        if (value.length < 10) {
-                          return 'Please enter a valid phone number';
+                        if (value.length != 10) {
+                          return 'Please enter a valid 10-digit phone number';
                         }
                         return null;
                       },

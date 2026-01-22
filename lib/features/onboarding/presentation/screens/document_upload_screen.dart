@@ -1,9 +1,65 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:blute_mobile/core/theme/app_colors.dart';
 import 'package:blute_mobile/shared/widgets/custom_button.dart';
 
-class DocumentUploadScreen extends StatelessWidget {
+class DocumentUploadScreen extends StatefulWidget {
   const DocumentUploadScreen({super.key});
+
+  @override
+  State<DocumentUploadScreen> createState() => _DocumentUploadScreenState();
+}
+
+class _DocumentUploadScreenState extends State<DocumentUploadScreen> {
+  PlatformFile? _aadharFile;
+  PlatformFile? _panFile;
+  PlatformFile? _otherFile;
+
+  Future<void> _pickFile(String type) async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
+      );
+
+      if (result != null) {
+        setState(() {
+          switch (type) {
+            case 'aadhar':
+              _aadharFile = result.files.first;
+              break;
+            case 'pan':
+              _panFile = result.files.first;
+              break;
+            case 'other':
+              _otherFile = result.files.first;
+              break;
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('Error picking file: $e');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error picking file: $e')));
+    }
+  }
+
+  void _removeFile(String type) {
+    setState(() {
+      switch (type) {
+        case 'aadhar':
+          _aadharFile = null;
+          break;
+        case 'pan':
+          _panFile = null;
+          break;
+        case 'other':
+          _otherFile = null;
+          break;
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,14 +78,14 @@ class DocumentUploadScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Step 2 of 4',
+              'Step 2 of 3',
               style: Theme.of(
                 context,
               ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 8),
             LinearProgressIndicator(
-              value: 0.5,
+              value: 0.66,
               backgroundColor: AppColors.surface,
               color: AppColors.primary,
               minHeight: 6,
@@ -59,6 +115,8 @@ class DocumentUploadScreen extends StatelessWidget {
               context,
               'Upload Aadhar Card',
               'Tap to upload your Aadhaar card',
+              'aadhar',
+              _aadharFile,
             ),
             const SizedBox(height: 24),
             const Text(
@@ -70,17 +128,21 @@ class DocumentUploadScreen extends StatelessWidget {
               context,
               'Upload PAN Card',
               'Tap to upload your PAN Card',
+              'pan',
+              _panFile,
             ),
             const SizedBox(height: 24),
             const Text(
-              'Driving License',
+              'Other Documents',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             _buildUploadCard(
               context,
-              'Upload Driving License',
-              'Tap to upload your Driving License',
+              'Upload Other Documents',
+              'Tap to upload other supporting docs',
+              'other',
+              _otherFile,
             ),
             const SizedBox(height: 32),
             SizedBox(
@@ -89,12 +151,16 @@ class DocumentUploadScreen extends StatelessWidget {
                 text: 'Next: Add Bank Details',
                 icon: Icons.arrow_forward,
                 onPressed: () {
-                  // Navigate to Bank Details or Complete
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Navigate to next step (Bank Details)'),
-                    ),
-                  );
+                  if (_aadharFile != null && _panFile != null) {
+                    Navigator.pushNamed(context, '/bank-details');
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Please upload Aadhar and PAN card.'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
                 },
               ),
             ),
@@ -102,7 +168,11 @@ class DocumentUploadScreen extends StatelessWidget {
             Center(
               child: TextButton(
                 onPressed: () {
-                  // Skip logic
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    '/home',
+                    (route) => false,
+                  );
                 },
                 child: const Text('Skip & do it later'),
               ),
@@ -113,18 +183,25 @@ class DocumentUploadScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildUploadCard(BuildContext context, String title, String subtitle) {
+  Widget _buildUploadCard(
+    BuildContext context,
+    String title,
+    String subtitle,
+    String type,
+    PlatformFile? file,
+  ) {
+    bool isFileSelected = file != null;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: double.parse('1.0') == 1
-            ? Colors.white
-            : Colors.white, // Ensure white background
+        color: Colors.white,
         border: Border.all(
-          color: AppColors.border,
-          style: BorderStyle.none,
-        ), // Using shadow instead of dotted border for now or just outline
+          color: isFileSelected ? AppColors.primary : AppColors.border,
+          style: isFileSelected ? BorderStyle.solid : BorderStyle.none,
+          width: 1.5,
+        ),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -136,39 +213,75 @@ class DocumentUploadScreen extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Text(
-            title,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            subtitle,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 12,
+          if (isFileSelected) ...[
+            const Icon(Icons.check_circle, color: AppColors.primary, size: 40),
+            const SizedBox(height: 8),
+            Text(
+              file.name,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 36,
-            child: ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.surface,
-                foregroundColor: Colors.black,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+            const SizedBox(height: 4),
+            Text(
+              '${(file.size / 1024).toStringAsFixed(2)} KB',
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 36,
+              child: OutlinedButton.icon(
+                onPressed: () => _removeFile(type),
+                icon: const Icon(Icons.close, size: 16),
+                label: const Text('Remove'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.red,
+                  side: const BorderSide(color: Colors.red),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               ),
-              child: const Text(
-                'Upload',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+          ] else ...[
+            Text(
+              title,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12,
               ),
             ),
-          ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 36,
+              child: ElevatedButton(
+                onPressed: () => _pickFile(type),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.surface,
+                  foregroundColor: Colors.black,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Upload',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

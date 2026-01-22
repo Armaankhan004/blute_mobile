@@ -19,7 +19,16 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final TextEditingController _dobController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _localityController = TextEditingController();
-  final TextEditingController _educationController = TextEditingController();
+
+  String? _selectedEducation;
+  final List<String> _educationOptions = [
+    'High School',
+    'Bachelor Degree',
+    'Master Degree',
+    'PhD',
+    'Diploma',
+    'Other',
+  ];
 
   @override
   void dispose() {
@@ -29,7 +38,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     _dobController.dispose();
     _addressController.dispose();
     _localityController.dispose();
-    _educationController.dispose();
+
     super.dispose();
   }
 
@@ -116,7 +125,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Step 1 of 4',
+                'Step 1 of 3',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
@@ -124,7 +133,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               ),
               const SizedBox(height: 12),
               LinearProgressIndicator(
-                value: 0.25,
+                value: 0.33,
                 backgroundColor: AppColors.surface,
                 color: AppColors.primary,
                 minHeight: 8,
@@ -191,10 +200,50 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 validator: _requiredValidator,
               ),
               const SizedBox(height: 16),
-              CustomTextField(
-                controller: _educationController,
-                hintText: 'Education Qualification',
+              DropdownButtonFormField<String>(
+                value: _selectedEducation,
+                decoration: InputDecoration(
+                  hintText: 'Education Qualification',
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 20, // Match CustomTextField padding roughly
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.primary),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+                items: _educationOptions.map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                onChanged: (newValue) {
+                  setState(() {
+                    _selectedEducation = newValue;
+                  });
+                },
                 validator: _requiredValidator,
+                icon: const Icon(
+                  Icons.keyboard_arrow_down,
+                  color: AppColors.textSecondary,
+                ),
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 16,
+                ),
+                dropdownColor: Colors.white,
               ),
               const SizedBox(height: 40),
               SizedBox(
@@ -213,7 +262,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               Center(
                 child: TextButton(
                   onPressed: () {
-                    // Sip and do it later logic
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      '/home',
+                      (route) => false,
+                    );
                   },
                   child: Text(
                     'Skip & do it later',
