@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   // Primary Palette
-  static const Color primary = Color(
-    0xFF2962FF,
-  ); // Blue Accent 700 or similar vibrant blue
-  static const Color primaryDark = Color(0xFF0039CB);
+  static const Color primary = Color(0xFF6200EE); // Purple from design
+  static const Color primaryDark = Color(0xFF3700B3);
   static const Color primaryLight = Color(0xFF768FFF);
 
   // Text Colors

@@ -18,12 +18,6 @@ class ProfileScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.primary),
-          onPressed: () {
-            // Logic for back arrow, maybe switch to Home tab
-          },
-        ),
         title: Text(
           'My Profile',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -190,7 +184,9 @@ class ProfileScreen extends StatelessWidget {
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/subscription_selection');
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary.withOpacity(0.1),
                         foregroundColor: AppColors.primary,
@@ -302,9 +298,29 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(height: 16),
 
             // Action Tiles
-            _buildActionTile('Upload Screenshot For Blute Coins'),
+            _buildActionTile(
+              context,
+              'Partner Ids',
+              onTap: () {
+                // Navigation to Partner Ids (Placeholder for now)
+              },
+            ),
             const SizedBox(height: 12),
-            _buildActionTile('Update Profile'),
+            _buildActionTile(
+              context,
+              'Upload Screenshot For Blute Coins',
+              onTap: () {
+                Navigator.pushNamed(context, '/upload_screenshot');
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildActionTile(
+              context,
+              'Update Profile',
+              onTap: () {
+                // Navigation to Update Profile (Placeholder for now)
+              },
+            ),
             const SizedBox(height: 24),
 
             // Log Out Button
@@ -333,33 +349,40 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActionTile(String title) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
+  Widget _buildActionTile(
+    BuildContext context,
+    String title, {
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-          ),
-          const Icon(Icons.chevron_right, color: Colors.grey),
-        ],
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: Colors.grey),
+          ],
+        ),
       ),
     );
   }

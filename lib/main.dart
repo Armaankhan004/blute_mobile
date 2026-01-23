@@ -7,6 +7,8 @@ import 'package:blute_mobile/features/home/presentation/screens/slot_selection_s
 import 'package:blute_mobile/features/onboarding/presentation/screens/bank_details_screen.dart';
 import 'package:blute_mobile/features/onboarding/presentation/screens/document_upload_screen.dart';
 import 'package:blute_mobile/features/onboarding/presentation/screens/profile_setup_screen.dart';
+import 'package:blute_mobile/features/home/presentation/screens/upload_screenshots_screen.dart';
+import 'package:blute_mobile/features/home/presentation/screens/subscription_selection_screen.dart';
 import 'package:blute_mobile/features/onboarding/presentation/screens/success_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -50,6 +52,9 @@ class MyApp extends StatelessWidget {
           '/booking-confirmation': (context) =>
               const BookingConfirmationScreen(),
           '/booking-success': (context) => const BookingSuccessScreen(),
+          '/upload_screenshot': (context) => const UploadScreenshotsScreen(),
+          '/subscription_selection': (context) =>
+              const SubscriptionSelectionScreen(),
         },
         home: const SplashScreen(),
       ),
