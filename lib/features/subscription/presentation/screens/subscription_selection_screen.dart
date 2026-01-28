@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:blute_mobile/core/theme/app_colors.dart';
 import 'package:blute_mobile/shared/widgets/custom_button.dart';
 import 'package:blute_mobile/core/di/injection_container.dart' as di;
-import 'package:blute_mobile/features/home/presentation/bloc/subscription/subscription_bloc.dart';
+import 'package:blute_mobile/features/subscription/presentation/bloc/subscription/subscription_bloc.dart';
 
 class SubscriptionSelectionScreen extends StatelessWidget {
   const SubscriptionSelectionScreen({super.key});

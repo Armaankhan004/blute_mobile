@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:blute_mobile/core/theme/app_colors.dart';
+import 'package:blute_mobile/features/onboarding/data/onboarding_model.dart';
+import 'package:blute_mobile/features/onboarding/presentation/bloc/onboarding_bloc.dart';
+import 'package:blute_mobile/features/onboarding/presentation/bloc/onboarding_event.dart';
+import 'package:blute_mobile/features/onboarding/presentation/bloc/onboarding_state.dart';
 import 'package:blute_mobile/shared/widgets/custom_button.dart';
 import 'package:blute_mobile/shared/widgets/custom_text_field.dart';
 
@@ -102,187 +107,238 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'Profile Setup',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            color: AppColors.primary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Step 1 of 3',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-              ),
-              const SizedBox(height: 12),
-              LinearProgressIndicator(
-                value: 0.33,
-                backgroundColor: AppColors.surface,
+    return BlocConsumer<OnboardingBloc, OnboardingState>(
+      listener: (context, state) {
+        if (state is OnboardingSuccess && state.step == 'profile') {
+          Navigator.pushNamed(context, '/document-upload');
+        } else if (state is OnboardingError) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.message)));
+        }
+      },
+      builder: (context, state) {
+        return Scaffold(
+          appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: Text(
+              'Profile Setup',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 color: AppColors.primary,
-                minHeight: 8,
-                borderRadius: BorderRadius.circular(4),
+                fontWeight: FontWeight.bold,
               ),
-              const SizedBox(height: 24),
-              Row(
+            ),
+            centerTitle: true,
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: CustomTextField(
-                      controller: _firstNameController,
-                      hintText: 'First Name',
-                      validator: _requiredValidator,
+                  Text(
+                    'Step 1 of 3',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: CustomTextField(
-                      controller: _lastNameController,
-                      hintText: 'Last Name',
-                      validator: _requiredValidator,
+                  const SizedBox(height: 12),
+                  LinearProgressIndicator(
+                    value: 0.33,
+                    backgroundColor: AppColors.surface,
+                    color: AppColors.primary,
+                    minHeight: 8,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: CustomTextField(
+                          controller: _firstNameController,
+                          hintText: 'First Name',
+                          validator: _requiredValidator,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: CustomTextField(
+                          controller: _lastNameController,
+                          hintText: 'Last Name',
+                          validator: _requiredValidator,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                    controller: _emailController,
+                    hintText: 'Email ID',
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your email';
+                      }
+                      if (!value.contains('@')) {
+                        return 'Please enter a valid email';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  GestureDetector(
+                    onTap: () => _selectDate(context),
+                    child: AbsorbPointer(
+                      child: CustomTextField(
+                        controller: _dobController,
+                        hintText: 'Date Of Birth',
+                        validator: _requiredValidator,
+                      ),
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              CustomTextField(
-                controller: _emailController,
-                hintText: 'Email ID',
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
-                  }
-                  if (!value.contains('@')) {
-                    return 'Please enter a valid email';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              GestureDetector(
-                onTap: () => _selectDate(context),
-                child: AbsorbPointer(
-                  child: CustomTextField(
-                    controller: _dobController,
-                    hintText: 'Date Of Birth',
-                    // Removed icon to match image cleaner look, or keep it if preferred.
-                    // Image shows no icon. Removing it for accuracy.
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                    controller: _addressController,
+                    hintText: 'Address',
                     validator: _requiredValidator,
                   ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              CustomTextField(
-                controller: _addressController,
-                hintText: 'Address',
-                validator: _requiredValidator,
-              ),
-              const SizedBox(height: 16),
-              CustomTextField(
-                controller: _localityController,
-                hintText: 'Locality',
-                validator: _requiredValidator,
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: _selectedEducation,
-                decoration: InputDecoration(
-                  hintText: 'Education Qualification',
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 20, // Match CustomTextField padding roughly
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                    controller: _localityController,
+                    hintText: 'Locality',
+                    validator: _requiredValidator,
                   ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.primary),
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
-                ),
-                items: _educationOptions.map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-                onChanged: (newValue) {
-                  setState(() {
-                    _selectedEducation = newValue;
-                  });
-                },
-                validator: _requiredValidator,
-                icon: const Icon(
-                  Icons.keyboard_arrow_down,
-                  color: AppColors.textSecondary,
-                ),
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 16,
-                ),
-                dropdownColor: Colors.white,
-              ),
-              const SizedBox(height: 40),
-              SizedBox(
-                width: double.infinity,
-                child: CustomButton(
-                  text: 'Next: Upload Documents',
-                  icon: Icons.arrow_forward,
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      Navigator.pushNamed(context, '/document-upload');
-                    }
-                  },
-                ),
-              ),
-              const SizedBox(height: 16),
-              Center(
-                child: TextButton(
-                  onPressed: () {
-                    Navigator.pushNamedAndRemoveUntil(
-                      context,
-                      '/home',
-                      (route) => false,
-                    );
-                  },
-                  child: Text(
-                    'Skip & do it later',
-                    style: TextStyle(
-                      color: AppColors.primary,
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: _selectedEducation,
+                    decoration: InputDecoration(
+                      hintText: 'Education Qualification',
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 20,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.primary),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
+                    items: _educationOptions.map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    onChanged: (newValue) {
+                      setState(() {
+                        _selectedEducation = newValue;
+                      });
+                    },
+                    validator: _requiredValidator,
+                    icon: const Icon(
+                      Icons.keyboard_arrow_down,
+                      color: AppColors.textSecondary,
+                    ),
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
                       fontSize: 16,
-                      fontWeight: FontWeight.w500,
+                    ),
+                    dropdownColor: Colors.white,
+                  ),
+                  const SizedBox(height: 40),
+                  SizedBox(
+                    width: double.infinity,
+                    child: CustomButton(
+                      text: 'Next: Upload Documents',
+                      icon: Icons.arrow_forward,
+                      isLoading: state is OnboardingLoading,
+                      onPressed: () {
+                        if (_formKey.currentState!.validate()) {
+                          final profileRequest = ProfileRequest(
+                            firstName: _firstNameController.text,
+                            lastName: _lastNameController.text,
+                            dob: _dobController
+                                .text, // Assuming format matches YYYY-MM-DD or backend handles it?
+                            // Backend note: backend expects YYYY-MM-DD but frontend sends DD/MM/YYYY.
+                            // I should fix format here or backend. Let's fix here.
+                            address: _addressController.text,
+                            locality: _localityController.text,
+                            email: _emailController.text,
+                            educationQualification: _selectedEducation!,
+                          );
+                          // Fix date format
+                          // Fix date format
+                          final dateParts = _dobController.text.split('/');
+                          if (dateParts.length == 3) {
+                            // Convert DD/MM/YYYY to YYYY-MM-DD
+                            final day = dateParts[0].padLeft(2, '0');
+                            final month = dateParts[1].padLeft(2, '0');
+                            final year = dateParts[2];
+                            final formattedDate = "$year-$month-$day";
+                            // Create new request with formatted date
+                            final finalRequest = ProfileRequest(
+                              firstName: profileRequest.firstName,
+                              lastName: profileRequest.lastName,
+                              dob: formattedDate,
+                              address: profileRequest.address,
+                              locality: profileRequest.locality,
+                              email: profileRequest.email,
+                              educationQualification:
+                                  profileRequest.educationQualification,
+                            );
+                            context.read<OnboardingBloc>().add(
+                              SubmitProfileEvent(finalRequest),
+                            );
+                          } else {
+                            context.read<OnboardingBloc>().add(
+                              SubmitProfileEvent(profileRequest),
+                            );
+                          }
+                        }
+                      },
                     ),
                   ),
-                ),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.pushNamedAndRemoveUntil(
+                          context,
+                          '/home',
+                          (route) => false,
+                        );
+                      },
+                      child: Text(
+                        'Skip & do it later',
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
               ),
-              const SizedBox(height: 24),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

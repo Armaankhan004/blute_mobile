@@ -17,10 +17,11 @@ class SendOtpEvent extends AuthEvent {
 }
 
 class VerifyOtpEvent extends AuthEvent {
+  final String phoneNumber;
   final String otp;
 
-  const VerifyOtpEvent(this.otp);
+  const VerifyOtpEvent({required this.phoneNumber, required this.otp});
 
   @override
-  List<Object> get props => [otp];
+  List<Object> get props => [phoneNumber, otp];
 }

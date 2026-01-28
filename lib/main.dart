@@ -1,14 +1,14 @@
-import 'package:blute_mobile/features/home/presentation/screens/booking_confirmation_screen.dart';
-import 'package:blute_mobile/features/home/presentation/screens/booking_success_screen.dart';
+import 'package:blute_mobile/features/gigs/presentation/screens/booking_confirmation_screen.dart';
+import 'package:blute_mobile/features/gigs/presentation/screens/booking_success_screen.dart';
 import 'package:blute_mobile/features/home/presentation/screens/home_screen.dart';
-import 'package:blute_mobile/features/home/presentation/screens/profile_screen.dart';
-import 'package:blute_mobile/features/home/presentation/screens/slot_details_screen.dart';
-import 'package:blute_mobile/features/home/presentation/screens/slot_selection_screen.dart';
+import 'package:blute_mobile/features/profile/presentation/screens/profile_screen.dart';
+import 'package:blute_mobile/features/gigs/presentation/screens/slot_details_screen.dart';
+import 'package:blute_mobile/features/gigs/presentation/screens/slot_selection_screen.dart';
 import 'package:blute_mobile/features/onboarding/presentation/screens/bank_details_screen.dart';
 import 'package:blute_mobile/features/onboarding/presentation/screens/document_upload_screen.dart';
 import 'package:blute_mobile/features/onboarding/presentation/screens/profile_setup_screen.dart';
-import 'package:blute_mobile/features/home/presentation/screens/upload_screenshots_screen.dart';
-import 'package:blute_mobile/features/home/presentation/screens/subscription_selection_screen.dart';
+import 'package:blute_mobile/features/profile/presentation/screens/upload_screenshots_screen.dart';
+import 'package:blute_mobile/features/subscription/presentation/screens/subscription_selection_screen.dart';
 import 'package:blute_mobile/features/onboarding/presentation/screens/success_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,6 +18,7 @@ import 'package:blute_mobile/core/theme/app_theme.dart';
 import 'package:blute_mobile/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:blute_mobile/features/auth/presentation/screens/login_screen.dart';
 import 'package:blute_mobile/features/auth/presentation/screens/otp_screen.dart';
+import 'package:blute_mobile/features/onboarding/presentation/bloc/onboarding_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,7 +32,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
-      providers: [BlocProvider(create: (_) => di.sl<AuthBloc>())],
+      providers: [
+        BlocProvider(create: (_) => di.sl<AuthBloc>()),
+        BlocProvider(create: (_) => di.sl<OnboardingBloc>()),
+      ],
       child: MaterialApp(
         navigatorKey: di.sl<GlobalKey<NavigatorState>>(),
         title: 'Blute.AI',

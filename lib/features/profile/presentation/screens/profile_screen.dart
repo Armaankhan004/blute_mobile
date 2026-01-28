@@ -1,9 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:blute_mobile/core/theme/app_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../data/user_remote_datasource.dart';
+import '../../data/user_model.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  final UserRemoteDataSource _userDataSource = UserRemoteDataSource();
+  UserResponse? _user;
+  bool _isLoading = true;
+  String _errorMessage = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProfile();
+  }
+
+  Future<void> _fetchProfile() async {
+    try {
+      final user = await _userDataSource.getUserProfile();
+      if (mounted) {
+        setState(() {
+          _user = user;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   Future<void> _logout(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
@@ -15,11 +52,55 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (_errorMessage.isNotEmpty) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(
+            'Profile',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              color: AppColors.primary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          centerTitle: true,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: () => _logout(context),
+            ),
+          ],
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('Error: $_errorMessage'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _fetchProfile,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final String fullName =
+        '${_user?.profile?.firstName ?? 'Rider'} ${_user?.profile?.lastName ?? 'Name'}';
+    final String joinDate = 'Joined: 15-January-2026'; // Placeholder for now
+
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         title: Text(
-          'My Profile',
+          'Profile',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
             color: AppColors.primary,
             fontWeight: FontWeight.bold,
@@ -76,10 +157,14 @@ class ProfileScreen extends StatelessWidget {
                             color: AppColors.primary.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Text(
-                            'VERIFIED',
+                          child: Text(
+                            _user?.isVerified == true
+                                ? 'VERIFIED'
+                                : 'UNVERIFIED',
                             style: TextStyle(
-                              color: AppColors.primary,
+                              color: _user?.isVerified == true
+                                  ? AppColors.primary
+                                  : Colors.grey,
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 1,
@@ -87,17 +172,25 @@ class ProfileScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        const Text(
-                          'Rider Name',
-                          style: TextStyle(
+                        Text(
+                          fullName,
+                          style: const TextStyle(
                             color: AppColors.primary,
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         const SizedBox(height: 4),
-                        const Text(
-                          'Joined: 15-January-2026',
+                        Text(
+                          _user?.email ?? '',
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          joinDate,
                           style: TextStyle(
                             color: AppColors.primary,
                             fontSize: 12,

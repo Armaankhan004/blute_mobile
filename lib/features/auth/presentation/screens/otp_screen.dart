@@ -177,7 +177,12 @@ class _OtpScreenState extends State<OtpScreen> {
                     text: 'Verify',
                     isLoading: state is AuthLoading,
                     onPressed: () {
-                      context.read<AuthBloc>().add(VerifyOtpEvent(_otp));
+                      context.read<AuthBloc>().add(
+                        VerifyOtpEvent(
+                          phoneNumber: _phoneNumber ?? '',
+                          otp: _otp,
+                        ),
+                      );
                     },
                   ),
                 ),

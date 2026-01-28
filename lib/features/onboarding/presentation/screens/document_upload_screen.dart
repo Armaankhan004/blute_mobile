@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:blute_mobile/core/theme/app_colors.dart';
+import 'package:blute_mobile/features/onboarding/presentation/bloc/onboarding_bloc.dart';
+import 'package:blute_mobile/features/onboarding/presentation/bloc/onboarding_event.dart';
+import 'package:blute_mobile/features/onboarding/presentation/bloc/onboarding_state.dart';
 import 'package:blute_mobile/shared/widgets/custom_button.dart';
 
 class DocumentUploadScreen extends StatefulWidget {
@@ -63,123 +67,162 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text('Upload Documents for KYC'),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Step 2 of 3',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+    return BlocConsumer<OnboardingBloc, OnboardingState>(
+      listener: (context, state) {
+        if (state is OnboardingSuccess && state.step == 'document') {
+          Navigator.pushNamed(context, '/bank-details');
+        } else if (state is OnboardingError) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.message)));
+        }
+      },
+      builder: (context, state) {
+        return Scaffold(
+          appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => Navigator.pop(context),
             ),
-            const SizedBox(height: 8),
-            LinearProgressIndicator(
-              value: 0.66,
-              backgroundColor: AppColors.surface,
-              color: AppColors.primary,
-              minHeight: 6,
-              borderRadius: BorderRadius.circular(3),
-            ),
-            const SizedBox(height: 32),
-            Text(
-              'Upload Documents',
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Please upload a clear image of your Documents. Ensure all details are visible.',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Aadhaar Card',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            _buildUploadCard(
-              context,
-              'Upload Aadhar Card',
-              'Tap to upload your Aadhaar card',
-              'aadhar',
-              _aadharFile,
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'PAN Card',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            _buildUploadCard(
-              context,
-              'Upload PAN Card',
-              'Tap to upload your PAN Card',
-              'pan',
-              _panFile,
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Other Documents',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            _buildUploadCard(
-              context,
-              'Upload Other Documents',
-              'Tap to upload other supporting docs',
-              'other',
-              _otherFile,
-            ),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              child: CustomButton(
-                text: 'Next: Add Bank Details',
-                icon: Icons.arrow_forward,
-                onPressed: () {
-                  if (_aadharFile != null && _panFile != null) {
-                    Navigator.pushNamed(context, '/bank-details');
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Please upload Aadhar and PAN card.'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                },
-              ),
-            ),
-            const SizedBox(height: 16),
-            Center(
-              child: TextButton(
-                onPressed: () {
-                  Navigator.pushNamedAndRemoveUntil(
+            title: const Text('Upload Documents for KYC'),
+            centerTitle: true,
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Step 2 of 3',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                LinearProgressIndicator(
+                  value: 0.66,
+                  backgroundColor: AppColors.surface,
+                  color: AppColors.primary,
+                  minHeight: 6,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                const SizedBox(height: 32),
+                Text(
+                  'Upload Documents',
+                  style: Theme.of(
                     context,
-                    '/home',
-                    (route) => false,
-                  );
-                },
-                child: const Text('Skip & do it later'),
-              ),
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Please upload a clear image of your Documents. Ensure all details are visible.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Aadhaar Card',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                _buildUploadCard(
+                  context,
+                  'Upload Aadhar Card',
+                  'Tap to upload your Aadhaar card',
+                  'aadhar',
+                  _aadharFile,
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'PAN Card',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                _buildUploadCard(
+                  context,
+                  'Upload PAN Card',
+                  'Tap to upload your PAN Card',
+                  'pan',
+                  _panFile,
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Other Documents',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                _buildUploadCard(
+                  context,
+                  'Upload Other Documents',
+                  'Tap to upload other supporting docs',
+                  'other',
+                  _otherFile,
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  child: CustomButton(
+                    text: 'Next: Add Bank Details',
+                    icon: Icons.arrow_forward,
+                    isLoading: state is OnboardingLoading,
+                    onPressed: () {
+                      if (_aadharFile != null && _panFile != null) {
+                        List<DocumentPayload> documents = [];
+                        if (_aadharFile != null) {
+                          documents.add(
+                            DocumentPayload(
+                              file: _aadharFile!,
+                              fileType: 'AADHAR',
+                            ),
+                          );
+                        }
+                        if (_panFile != null) {
+                          documents.add(
+                            DocumentPayload(file: _panFile!, fileType: 'PAN'),
+                          );
+                        }
+                        if (_otherFile != null) {
+                          documents.add(
+                            DocumentPayload(
+                              file: _otherFile!,
+                              fileType: 'OTHER',
+                            ),
+                          );
+                        }
+
+                        context.read<OnboardingBloc>().add(
+                          UploadDocumentsEvent(documents),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Please upload Aadhar and PAN card.'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Center(
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        '/home',
+                        (route) => false,
+                      );
+                    },
+                    child: const Text('Skip & do it later'),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
