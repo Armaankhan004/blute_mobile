@@ -193,6 +193,9 @@ class _SlotDetailsScreenState extends State<SlotDetailsScreen> {
             const Divider(height: 32),
             _buildSectionTitle('Slot/ Time Details'),
             const SizedBox(height: 8),
+            _buildSectionSubtitle('Date'),
+            Text(DateFormat('MMMM dd, yyyy').format(gig.startTime)),
+            const SizedBox(height: 16),
             _buildSectionSubtitle('Slots'),
             Text(
               '${DateFormat.jm().format(gig.startTime)} to ${DateFormat.jm().format(gig.endTime)}',
@@ -420,7 +423,7 @@ class _SlotDetailsScreenState extends State<SlotDetailsScreen> {
   Color _getLogoColor(String platform) {
     platform = platform.toLowerCase();
     if (platform.contains('blinkit')) return Colors.amber;
-    if (platform.contains('zepto')) return Colors.purple;
+    if (platform.contains('zepto')) return Colors.blue;
     if (platform.contains('dunzo')) return Colors.green;
     if (platform.contains('swiggy')) return Colors.orange;
     if (platform.contains('uber')) return Colors.black;

@@ -44,9 +44,7 @@ class _MyGigsScreenState extends State<MyGigsScreen> {
         if (booking.gig == null) continue;
 
         final isPast =
-            booking.gig!.endTime.isBefore(now) ||
-            booking.status == 'COMPLETED' ||
-            booking.status == 'CANCELLED';
+            booking.gig!.endTime.isBefore(now) || booking.status == 'CANCELLED';
 
         if (isPast) {
           past.add(booking);
@@ -167,6 +165,7 @@ class _GigList extends StatelessWidget {
       return RefreshIndicator(
         onRefresh: onRefresh,
         child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
           children: const [
             SizedBox(height: 200),
             Center(child: Text('No gigs found')),
@@ -178,6 +177,7 @@ class _GigList extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: onRefresh,
       child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(16),
         itemCount: bookings.length,
         itemBuilder: (context, index) {
@@ -208,7 +208,7 @@ class _GigList extends StatelessWidget {
           if (platform.contains('blinkit'))
             logoColor = Colors.amber;
           else if (platform.contains('zepto'))
-            logoColor = Colors.purple;
+            logoColor = Colors.blue;
           else if (platform.contains('dunzo'))
             logoColor = Colors.green;
           else if (platform.contains('swiggy'))

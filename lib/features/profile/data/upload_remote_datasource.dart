@@ -1,7 +1,7 @@
-import 'dart:io';
 import 'package:dio/dio.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/di/injection_container.dart';
+import '../../../../core/config/api_config.dart';
 
 class UploadRemoteDataSource {
   final DioClient _dioClient;
@@ -31,7 +31,7 @@ class UploadRemoteDataSource {
       });
 
       final response = await _dioClient.dio.post(
-        '/files/upload-screenshots',
+        ApiConfig.uploadScreenshots,
         data: formData,
       );
 

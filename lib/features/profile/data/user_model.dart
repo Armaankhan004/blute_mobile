@@ -8,6 +8,10 @@ class UserResponse {
   final int subscriptionCoins;
   final int earnedCoins;
   final int gigsCompleted;
+  final int monthlyGigsCount;
+  final int monthlyBookedCount;
+  final int monthlyCompletedCount;
+  final int monthlyCancelledCount;
 
   UserResponse({
     required this.id,
@@ -19,6 +23,10 @@ class UserResponse {
     this.subscriptionCoins = 0,
     this.earnedCoins = 0,
     this.gigsCompleted = 0,
+    this.monthlyGigsCount = 0,
+    this.monthlyBookedCount = 0,
+    this.monthlyCompletedCount = 0,
+    this.monthlyCancelledCount = 0,
   });
 
   // Helper to get total coins
@@ -37,6 +45,10 @@ class UserResponse {
       subscriptionCoins: json['subscription_coins'] ?? 0,
       earnedCoins: json['earned_coins'] ?? 0,
       gigsCompleted: json['gigs_completed'] ?? 0,
+      monthlyGigsCount: json['monthly_gigs_count'] ?? 0,
+      monthlyBookedCount: json['monthly_booked_count'] ?? 0,
+      monthlyCompletedCount: json['monthly_completed_count'] ?? 0,
+      monthlyCancelledCount: json['monthly_cancelled_count'] ?? 0,
     );
   }
 }

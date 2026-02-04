@@ -1,3 +1,4 @@
+import 'package:blute_mobile/features/subscription/data/subscription_remote_datasource.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 
@@ -5,16 +6,18 @@ part 'subscription_event.dart';
 part 'subscription_state.dart';
 
 class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
+  final SubscriptionRemoteDataSource _remoteDataSource;
+
   // Keeping plans data here for now, could be in a repository
   final List<Map<String, dynamic>> plans = [
-    {'coins': 10, 'price': 100.00},
-    {'coins': 20, 'price': 200.00},
-    {'coins': 50, 'price': 500.00},
+    {'coins': 20, 'price': 0.00},
   ];
 
-  int _selectedPlanIndex = -1;
+  int _selectedPlanIndex = 0;
 
-  SubscriptionBloc() : super(SubscriptionInitial()) {
+  SubscriptionBloc({required SubscriptionRemoteDataSource remoteDataSource})
+    : _remoteDataSource = remoteDataSource,
+      super(SubscriptionPlanSelected(0)) {
     on<SelectSubscriptionPlan>(_onSelectSubscriptionPlan);
     on<ProcessSubscriptionPayment>(_onProcessSubscriptionPayment);
   }
@@ -33,19 +36,16 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
   ) async {
     if (_selectedPlanIndex == -1) {
       emit(const SubscriptionError('Please select a subscription plan'));
-      // Reset to initial or keep selection state if meaningful (here re-emitting last valid or just error)
-      // Actually we want to show error but keep selection?
-      // Simplified: Just emit error. UI handles showing snackbar.
       return;
     }
 
     emit(SubscriptionPaymentLoading());
 
-    // Stimulate network delay
-    await Future.delayed(const Duration(seconds: 1));
-
-    // Mock success
-    final coins = plans[_selectedPlanIndex]['coins'] as int;
-    emit(SubscriptionPaymentSuccess(coins));
+    try {
+      final coinsAdded = await _remoteDataSource.subscribe();
+      emit(SubscriptionPaymentSuccess(coinsAdded));
+    } catch (e) {
+      emit(SubscriptionError(e.toString()));
+    }
   }
 }

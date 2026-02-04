@@ -48,6 +48,14 @@ class _LoginScreenState extends State<LoginScreen> {
       listener: (context, state) {
         if (state is AuthOtpSent) {
           Navigator.pushNamed(context, '/otp', arguments: state.phoneNumber);
+        } else if (state is AuthAuthenticated || state is AuthGuest) {
+          Navigator.pushReplacementNamed(context, '/home');
+        } else if (state is AuthNavigateToRegister) {
+          Navigator.pushNamed(
+            context,
+            '/profile-setup',
+            arguments: state.phoneNumber,
+          );
         } else if (state is AuthError) {
           ScaffoldMessenger.of(
             context,
@@ -136,6 +144,21 @@ class _LoginScreenState extends State<LoginScreen> {
                             );
                           }
                         },
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Center(
+                      child: TextButton(
+                        onPressed: () {
+                          context.read<AuthBloc>().add(const SkipLoginEvent());
+                        },
+                        child: const Text(
+                          'Skip for now',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 100), // Push content up

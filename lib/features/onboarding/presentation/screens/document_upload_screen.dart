@@ -70,7 +70,7 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen> {
     return BlocConsumer<OnboardingBloc, OnboardingState>(
       listener: (context, state) {
         if (state is OnboardingSuccess && state.step == 'document') {
-          Navigator.pushNamed(context, '/bank-details');
+          Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
         } else if (state is OnboardingError) {
           ScaffoldMessenger.of(
             context,
@@ -163,8 +163,8 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: CustomButton(
-                    text: 'Next: Add Bank Details',
-                    icon: Icons.arrow_forward,
+                    text: 'Submit & Continue',
+                    icon: Icons.check,
                     isLoading: state is OnboardingLoading,
                     onPressed: () {
                       if (_aadharFile != null && _panFile != null) {

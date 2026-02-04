@@ -2,16 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:blute_mobile/core/theme/app_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/user_remote_datasource.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../data/user_model.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  ProfileScreenState createState() => ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class ProfileScreenState extends State<ProfileScreen> {
   final UserRemoteDataSource _userDataSource = UserRemoteDataSource();
   UserResponse? _user;
   bool _isLoading = true;
@@ -20,10 +23,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchProfile();
+    fetchProfile();
   }
 
-  Future<void> _fetchProfile() async {
+  Future<void> fetchProfile() async {
     if (mounted) {
       setState(() {
         _isLoading = true;
@@ -58,6 +61,77 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (context.read<AuthBloc>().state is AuthGuest) {
+      return Scaffold(
+        backgroundColor: Colors.grey.shade50,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.person_outline,
+                    size: 64,
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Guest Mode',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Sign in to access your profile, manage bookings, and view earnings.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        '/login',
+                        (route) => false,
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Sign In',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
@@ -89,7 +163,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Text('Error: $_errorMessage'),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: _fetchProfile,
+                onPressed: fetchProfile,
                 child: const Text('Retry'),
               ),
             ],
@@ -115,9 +189,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit, color: AppColors.primary),
+            onPressed: () async {
+              if (_user != null) {
+                final result = await Navigator.pushNamed(
+                  context,
+                  '/update-profile',
+                  arguments: _user,
+                );
+                if (result == true) {
+                  fetchProfile();
+                }
+              }
+            },
+          ),
+        ],
       ),
       body: RefreshIndicator(
-        onRefresh: _fetchProfile,
+        onRefresh: fetchProfile,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
@@ -187,6 +278,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               color: AppColors.primary,
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            _user?.phoneNumber != null &&
+                                    _user!.phoneNumber!.isNotEmpty
+                                ? (_user!.phoneNumber!.startsWith('+')
+                                      ? _user!.phoneNumber!
+                                      : '+91 ${_user!.phoneNumber}')
+                                : '',
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 14,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -357,9 +460,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ],
                         ),
-                        const Text(
-                          '4 / 500',
-                          style: TextStyle(
+                        Text(
+                          '${_user?.monthlyGigsCount ?? 0}',
+                          style: const TextStyle(
                             color: AppColors.primary,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -513,25 +616,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 context,
                 'Partner Ids',
                 onTap: () {
-                  // Navigation to Partner Ids (Placeholder for now)
+                  Navigator.pushNamed(context, '/partner-ids');
                 },
               ),
               const SizedBox(height: 12),
               _buildActionTile(
                 context,
-                'Upload Delivery Earnings For Blute Coins',
+                'Upload deliveries, earn Blute Coins',
                 onTap: () {
                   Navigator.pushNamed(context, '/upload_screenshot');
                 },
               ),
               const SizedBox(height: 12),
-              _buildActionTile(
-                context,
-                'Update Profile',
-                onTap: () {
-                  // Navigation to Update Profile (Placeholder for now)
-                },
-              ),
+              // _buildActionTile(
+              //   context,
+              //   'Update Profile',
+              //   onTap: () {
+              //     // Navigation to Update Profile (Placeholder for now)
+              //   },
+              // ),
               const SizedBox(height: 24),
 
               // Log Out Button

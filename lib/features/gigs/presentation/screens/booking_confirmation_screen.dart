@@ -48,7 +48,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
   Color _getLogoColor(String platform) {
     platform = platform.toLowerCase();
     if (platform.contains('blinkit')) return Colors.amber;
-    if (platform.contains('zepto')) return Colors.purple;
+    if (platform.contains('zepto')) return Colors.blue;
     if (platform.contains('dunzo')) return Colors.green;
     if (platform.contains('swiggy')) return Colors.orange;
     if (platform.contains('uber')) return Colors.black;

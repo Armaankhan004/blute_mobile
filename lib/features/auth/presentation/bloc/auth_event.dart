@@ -25,3 +25,10 @@ class VerifyOtpEvent extends AuthEvent {
   @override
   List<Object> get props => [phoneNumber, otp];
 }
+
+class SkipLoginEvent extends AuthEvent {
+  const SkipLoginEvent();
+
+  @override
+  List<Object> get props => [];
+}

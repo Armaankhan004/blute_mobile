@@ -403,7 +403,7 @@ class _UploadScreenshotsContentState extends State<_UploadScreenshotsContent> {
               const Text(
                 'Upload Success!',
                 style: TextStyle(
-                  color: Color(0xFF6200EE), // Purple
+                  color: AppColors.primary,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),

@@ -16,6 +16,7 @@ class GigRemoteDataSource {
     String? location,
     String? sortBy,
     String? shift,
+    DateTime? date,
   }) async {
     try {
       // Build query parameters
@@ -34,6 +35,9 @@ class GigRemoteDataSource {
       }
       if (shift != null) {
         queryParams['shift'] = shift;
+      }
+      if (date != null) {
+        queryParams['date'] = date.toIso8601String().split('T')[0];
       }
 
       final response = await _dioClient.dio.get(

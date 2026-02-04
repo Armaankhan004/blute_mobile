@@ -127,13 +127,33 @@ class _SubscriptionSelectionContent extends StatelessWidget {
                                     ),
                                   ],
                                 ),
-                                Text(
-                                  '₹ ${plan['price'].toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
-                                  ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    if (plan['price'] == 0)
+                                      const Text(
+                                        '₹ 150',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey,
+                                          fontWeight: FontWeight.bold,
+                                          decoration:
+                                              TextDecoration.lineThrough,
+                                        ),
+                                      ),
+                                    Text(
+                                      plan['price'] == 0
+                                          ? '₹0 (Free)'
+                                          : '₹ ${plan['price'].toStringAsFixed(2)}',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: plan['price'] == 0
+                                            ? const Color.fromARGB(255, 0, 0, 0)
+                                            : Colors.black,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -183,9 +203,9 @@ class _SubscriptionSelectionContent extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
-                'Payment Successful',
+                'Subscription Successful',
                 style: TextStyle(
-                  color: Color(0xFF6200EE),
+                  color: AppColors.primary,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -205,7 +225,7 @@ class _SubscriptionSelectionContent extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               const Text(
-                'Payment for subscription is successful! You can now start booking slots now',
+                'Your subscription is successful! You can now start booking slots.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 14),
               ),
@@ -241,7 +261,7 @@ class _SubscriptionSelectionContent extends StatelessWidget {
               const Text(
                 'Congratulations!',
                 style: TextStyle(
-                  color: Color(0xFF6200EE),
+                  color: AppColors.primary,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),

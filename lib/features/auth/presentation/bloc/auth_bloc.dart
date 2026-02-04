@@ -15,6 +15,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       super(AuthInitial()) {
     on<SendOtpEvent>(_onSendOtp);
     on<VerifyOtpEvent>(_onVerifyOtp);
+    on<SkipLoginEvent>(_onSkipLogin);
+  }
+
+  void _onSkipLogin(SkipLoginEvent event, Emitter<AuthState> emit) {
+    emit(AuthGuest());
   }
 
   Future<void> _onSendOtp(SendOtpEvent event, Emitter<AuthState> emit) async {

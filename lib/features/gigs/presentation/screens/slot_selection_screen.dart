@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:blute_mobile/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:blute_mobile/features/auth/presentation/bloc/auth_state.dart';
 import 'package:blute_mobile/core/theme/app_colors.dart';
 import 'package:blute_mobile/shared/widgets/custom_button.dart';
 import 'package:blute_mobile/features/gigs/data/gig_model.dart';
@@ -29,6 +32,10 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
     final List<Map<String, dynamic>> slots = [];
 
     DateTime currentTime = gig.startTime;
+    print('DEBUG: Generating slots for Gig: ${gig.title}');
+    print('DEBUG: StartTime: ${gig.startTime}, EndTime: ${gig.endTime}');
+    print('DEBUG: Is Start before End? ${currentTime.isBefore(gig.endTime)}');
+
     while (currentTime.isBefore(gig.endTime)) {
       // Format time as "5.00 PM"
       String formattedTime = DateFormat('h.mm a').format(currentTime);
@@ -119,14 +126,14 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                           color: isFull
                               ? Colors.grey.shade100
                               : isSelected
-                              ? Colors.purple.shade50
+                              ? AppColors.primary.withOpacity(0.1)
                               : Colors.white,
                           border: Border.all(
                             color: isFull
                                 ? Colors.grey.shade300
                                 : isSelected
                                 ? AppColors.primary
-                                : AppColors.primary.withValues(alpha: 0.5),
+                                : AppColors.primary.withOpacity(0.5),
                             width: isSelected ? 2 : 1,
                           ),
                           borderRadius: BorderRadius.circular(12),
@@ -187,6 +194,37 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                 onPressed: _selectedSlot == null
                     ? null
                     : () {
+                        final authState = context.read<AuthBloc>().state;
+                        if (authState is AuthGuest) {
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Sign In Required'),
+                              content: const Text(
+                                'You need to sign in to book a gig.',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('Cancel'),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context); // Close dialog
+                                    Navigator.pushNamedAndRemoveUntil(
+                                      context,
+                                      '/login',
+                                      (route) => false,
+                                    );
+                                  },
+                                  child: const Text('Sign In'),
+                                ),
+                              ],
+                            ),
+                          );
+                          return;
+                        }
+
                         Navigator.pushNamed(
                           context,
                           '/booking-confirmation',

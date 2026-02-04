@@ -4,12 +4,15 @@ import 'package:blute_mobile/features/home/presentation/screens/home_screen.dart
 import 'package:blute_mobile/features/profile/presentation/screens/profile_screen.dart';
 import 'package:blute_mobile/features/gigs/presentation/screens/slot_details_screen.dart';
 import 'package:blute_mobile/features/gigs/presentation/screens/slot_selection_screen.dart';
-import 'package:blute_mobile/features/onboarding/presentation/screens/bank_details_screen.dart';
 import 'package:blute_mobile/features/onboarding/presentation/screens/document_upload_screen.dart';
 import 'package:blute_mobile/features/onboarding/presentation/screens/profile_setup_screen.dart';
 import 'package:blute_mobile/features/profile/presentation/screens/upload_screenshots_screen.dart';
 import 'package:blute_mobile/features/subscription/presentation/screens/subscription_selection_screen.dart';
 import 'package:blute_mobile/features/onboarding/presentation/screens/success_screen.dart';
+import 'package:blute_mobile/features/profile/presentation/screens/update_profile_screen.dart';
+import 'package:blute_mobile/features/profile/presentation/screens/partner_ids_screen.dart';
+import 'package:blute_mobile/features/profile/presentation/screens/add_partner_id_screen.dart';
+import 'package:blute_mobile/features/profile/data/user_model.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -47,7 +50,6 @@ class MyApp extends StatelessWidget {
           '/register': (context) => const ProfileSetupScreen(),
           '/profile-setup': (context) => ProfileSetupScreen(),
           '/document-upload': (context) => DocumentUploadScreen(),
-          '/bank-details': (context) => const BankDetailsScreen(),
           '/home': (context) => const HomeScreen(),
           '/profile': (context) => const ProfileScreen(),
 
@@ -60,6 +62,11 @@ class MyApp extends StatelessWidget {
           '/upload_screenshot': (context) => const UploadScreenshotsScreen(),
           '/subscription_selection': (context) =>
               const SubscriptionSelectionScreen(),
+          '/update-profile': (context) => UpdateProfileScreen(
+            user: ModalRoute.of(context)!.settings.arguments as UserResponse,
+          ),
+          '/partner-ids': (context) => const PartnerIdsScreen(),
+          '/add-partner-id': (context) => const AddPartnerIdScreen(),
         },
         home: const SplashScreen(),
       ),

@@ -4,6 +4,7 @@ import 'package:blute_mobile/core/theme/app_colors.dart';
 import 'package:blute_mobile/features/home/presentation/widgets/job_card.dart';
 import 'package:blute_mobile/features/gigs/presentation/screens/my_gigs_screen.dart';
 import 'package:blute_mobile/features/profile/presentation/screens/profile_screen.dart';
+import 'package:intl/intl.dart';
 
 import 'package:blute_mobile/features/gigs/data/gig_model.dart';
 import 'package:blute_mobile/features/gigs/data/gig_remote_datasource.dart';
@@ -18,6 +19,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  final GlobalKey<ProfileScreenState> _profileKey = GlobalKey();
   final GigRemoteDataSource _gigDataSource = GigRemoteDataSource();
   final LocationService _locationService = LocationService();
   List<Gig> _gigs = [];
@@ -27,11 +29,14 @@ class _HomeScreenState extends State<HomeScreen> {
   // Search and filter state
   final TextEditingController _searchController = TextEditingController();
   String? _selectedPlatform;
-  String? _selectedLocation;
+  String? _selectedCity; // Top-left city selection
+  String? _selectedLocation; // Area selection from filters
   String? _currentCity; // Auto-detected city
   String? _selectedSort;
   String? _selectedShift; // 'day' or 'night'
+  DateTime? _selectedDate;
   double _selectedDistance = 50.0; // Default 50km radius
+  String? _selectedDemand; // 'high_demand', 'filling_fast', 'almost_full'
   Timer? _debounce;
 
   // Temporary filter state (for Apply button)
@@ -39,7 +44,9 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _tempLocation;
   String? _tempSort;
   String? _tempShift;
+  DateTime? _tempDate;
   double _tempDistance = 50.0;
+  String? _tempDemand;
 
   final List<String> _platformOptions = [
     'blinkit',
@@ -49,17 +56,51 @@ class _HomeScreenState extends State<HomeScreen> {
     'dunzo',
     'uber',
   ];
-  List<String> _locations = []; // Dynamic locations from API
+  List<String> _locations = []; // Dynamic locations (Areas) from API
+  final List<String> _cityOptions = [
+    'Bangalore',
+    'Mumbai',
+    'Delhi',
+    'Chennai',
+    'Hyderabad',
+    'Pune',
+  ];
 
   bool _hasInitiallyFetched = false;
+
+  // Search Hint Animation
+  int _currentHintIndex = 0;
+  final List<String> _searchHints = [
+    'Search "Zepto"',
+    'Search area',
+    'Search "560001"',
+    'Search jobs near you',
+    'Search "Swiggy"',
+    'Search "MG Road"',
+    'Search pincode',
+    'Search "Dunzo"',
+    'Search "Blinkit"',
+    'Search "Zomato"',
+  ];
+  Timer? _hintTimer;
 
   @override
   void initState() {
     super.initState();
+    _startHintTimer();
     _initLocation();
     _fetchLocations();
-    _searchController.addListener(_onSearchChanged);
     _hasInitiallyFetched = true;
+  }
+
+  void _startHintTimer() {
+    _hintTimer = Timer.periodic(const Duration(milliseconds: 1500), (timer) {
+      if (mounted) {
+        setState(() {
+          _currentHintIndex = (_currentHintIndex + 1) % _searchHints.length;
+        });
+      }
+    });
   }
 
   Future<void> _initLocation() async {
@@ -67,7 +108,12 @@ class _HomeScreenState extends State<HomeScreen> {
     if (mounted) {
       setState(() {
         _currentCity = city;
-        _selectedLocation = city; // Auto-select detected city
+        // Auto-select detected city if it matches our supported list, else default to Bangalore
+        if (_cityOptions.contains(city)) {
+          _selectedCity = city;
+        } else {
+          _selectedCity = 'Bangalore';
+        }
       });
       _fetchGigs(); // Fetch gigs after getting location
     } else {
@@ -88,15 +134,8 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     _searchController.dispose();
     _debounce?.cancel();
+    _hintTimer?.cancel();
     super.dispose();
-  }
-
-  void _onSearchChanged() {
-    // Debounce search to avoid excessive API calls
-    if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () {
-      _fetchGigs();
-    });
   }
 
   Future<void> _fetchGigs() async {
@@ -107,28 +146,53 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     }
     try {
-      final gigs = await _gigDataSource.getActiveGigs(
+      var gigs = await _gigDataSource.getActiveGigs(
         searchQuery: _searchController.text,
         platform: _selectedPlatform,
-        location: _selectedLocation,
+        // If specific area (_selectedLocation) is chosen, use it.
+        // Otherwise, use the selected city.
+        location: _selectedLocation ?? _selectedCity,
         sortBy: _selectedSort,
         shift: _selectedShift,
+        date: _selectedDate,
       );
 
-      // Sort: available gigs first, disabled (booked/full) last
-      gigs.sort((a, b) {
-        final aDisabled =
-            a.isBookedByCurrentUser || (a.bookedSlots >= a.totalSlots);
-        final bDisabled =
-            b.isBookedByCurrentUser || (b.bookedSlots >= b.totalSlots);
+      // Apply local demand filter
+      if (_selectedDemand != null) {
+        gigs = gigs.where((gig) {
+          final fillPercentage = gig.totalSlots > 0
+              ? gig.bookedSlots / gig.totalSlots
+              : 0.0;
+          switch (_selectedDemand) {
+            case 'high_demand':
+              return fillPercentage >= 0.5 && fillPercentage < 0.8;
+            case 'filling_fast':
+              return fillPercentage >= 0.3 && fillPercentage < 0.5;
+            case 'almost_full':
+              return fillPercentage >= 0.8;
+            default:
+              return true;
+          }
+        }).toList();
+      }
 
-        if (aDisabled == bDisabled) return 0;
-        return aDisabled ? 1 : -1; // Available first
+      // Filter out gigs already booked by the current user
+      final filteredGigs = gigs
+          .where((gig) => !gig.isBookedByCurrentUser)
+          .toList();
+
+      // Sort: available gigs first, disabled (full) last
+      filteredGigs.sort((a, b) {
+        final aFull = a.bookedSlots >= a.totalSlots;
+        final bFull = b.bookedSlots >= b.totalSlots;
+
+        if (aFull == bFull) return 0;
+        return aFull ? 1 : -1; // Available first
       });
 
       if (mounted) {
         setState(() {
-          _gigs = gigs;
+          _gigs = filteredGigs;
           _isLoading = false;
         });
       }
@@ -143,23 +207,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _fetchLocations() async {
-    // In a real app, this would fetch from backend
-    // For now, we simulate some popular cities + current city
-    final cities = {
-      'Bangalore',
-      'Mumbai',
-      'Delhi',
-      'Hyderabad',
-      'Chennai',
-      'Pune',
-    };
-    if (_currentCity != null) {
-      cities.add(_currentCity!);
-    }
-    if (mounted) {
-      setState(() {
-        _locations = cities.toList()..sort();
-      });
+    try {
+      final locations = await _gigDataSource.getLocations();
+      if (mounted) {
+        setState(() {
+          _locations = locations;
+        });
+      }
+    } catch (e) {
+      print('DEBUG: Failed to fetch locations: $e');
     }
   }
 
@@ -167,6 +223,10 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _selectedIndex = index;
     });
+    // Refresh profile whenever the profile tab is selected
+    if (index == 2) {
+      _profileKey.currentState?.fetchProfile();
+    }
   }
 
   Color _getLogoColor(String platform) {
@@ -175,7 +235,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (p.contains('zomato')) return Colors.red;
     if (p.contains('uber')) return Colors.black;
     if (p.contains('blinkit')) return Colors.yellow.shade700;
-    if (p.contains('zepto')) return Colors.deepPurple;
+    if (p.contains('zepto')) return Colors.blue;
     if (p.contains('dunzo')) return const Color(0xFF00FF00); // Dunzo green
     return AppColors.primary;
   }
@@ -187,6 +247,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _tempSort = _selectedSort;
     _tempShift = _selectedShift;
     _tempDistance = _selectedDistance;
+    _tempDemand = _selectedDemand;
 
     showModalBottomSheet(
       context: context,
@@ -234,7 +295,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               _selectedLocation = _tempLocation;
                               _selectedSort = _tempSort;
                               _selectedShift = _tempShift;
+                              _selectedDate = _tempDate;
                               _selectedDistance = _tempDistance;
+                              _selectedDemand = _tempDemand;
                             });
                             Navigator.pop(context);
                             _fetchGigs();
@@ -249,6 +312,90 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Date Filter Section
+                    const Text(
+                      'Date',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    GestureDetector(
+                      onTap: () async {
+                        final pickedDate = await showDatePicker(
+                          context: context,
+                          initialDate: _tempDate ?? DateTime.now(),
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime.now().add(
+                            const Duration(days: 30),
+                          ),
+                        );
+                        if (pickedDate != null) {
+                          setModalState(() {
+                            _tempDate = pickedDate;
+                          });
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _tempDate != null
+                              ? AppColors.primary
+                              : Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _tempDate != null
+                                ? AppColors.primary
+                                : Colors.transparent,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.calendar_today,
+                              size: 18,
+                              color: _tempDate != null
+                                  ? Colors.white
+                                  : Colors.black87,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _tempDate != null
+                                  ? DateFormat('EEE, MMM d').format(_tempDate!)
+                                  : 'Select Date',
+                              style: TextStyle(
+                                color: _tempDate != null
+                                    ? Colors.white
+                                    : Colors.black87,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            if (_tempDate != null) ...[
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: () {
+                                  setModalState(() {
+                                    _tempDate = null;
+                                  });
+                                },
+                                child: const Icon(
+                                  Icons.close,
+                                  size: 18,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 24),
 
@@ -307,7 +454,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     // Location Filter Section
                     const Text(
-                      'Location',
+                      'Active Areas',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -355,6 +502,65 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         );
                       }).toList(),
+                    ),
+                    const SizedBox(height: 24),
+                    // Demand Status Filter Section
+                    const Text(
+                      'Demand Status',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children:
+                          [
+                            {'label': 'Filling Fast', 'value': 'filling_fast'},
+                            {'label': 'High Demand', 'value': 'high_demand'},
+                            {'label': 'Almost Full', 'value': 'almost_full'},
+                          ].map((demand) {
+                            final isSelected = _tempDemand == demand['value'];
+                            return GestureDetector(
+                              onTap: () {
+                                setModalState(() {
+                                  _tempDemand = isSelected
+                                      ? null
+                                      : demand['value'];
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? AppColors.primary
+                                      : Colors.grey.shade200,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? AppColors.primary
+                                        : Colors.transparent,
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: Text(
+                                  demand['label']!,
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? Colors.white
+                                        : Colors.black87,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
                     ),
                     const SizedBox(height: 24),
 
@@ -408,29 +614,55 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    RadioListTile<String>(
-                      title: const Text('Day Shift'),
-                      value: 'day',
-                      groupValue: _tempShift,
-                      activeColor: AppColors.primary,
-                      contentPadding: EdgeInsets.zero,
-                      onChanged: (String? value) {
-                        setModalState(() {
-                          _tempShift = value;
-                        });
-                      },
-                    ),
-                    RadioListTile<String>(
-                      title: const Text('Night Shift'),
-                      value: 'night',
-                      groupValue: _tempShift,
-                      activeColor: AppColors.primary,
-                      contentPadding: EdgeInsets.zero,
-                      onChanged: (String? value) {
-                        setModalState(() {
-                          _tempShift = value;
-                        });
-                      },
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children:
+                          [
+                            {'label': 'Day', 'value': 'day'},
+                            {'label': 'Noon', 'value': 'noon'},
+                            {'label': 'Evening', 'value': 'evening'},
+                            {'label': 'Late Night', 'value': 'late_night'},
+                          ].map((shift) {
+                            final isSelected = _tempShift == shift['value'];
+                            return GestureDetector(
+                              onTap: () {
+                                setModalState(() {
+                                  _tempShift = isSelected
+                                      ? null
+                                      : shift['value'];
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? AppColors.primary
+                                      : Colors.grey.shade200,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? AppColors.primary
+                                        : Colors.transparent,
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: Text(
+                                  shift['label']!,
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? Colors.white
+                                        : Colors.black87,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
                     ),
                     const SizedBox(height: 24),
 
@@ -498,7 +730,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Icon(Icons.location_on, color: AppColors.primary, size: 20),
                   const SizedBox(width: 4),
                   DropdownButton<String>(
-                    value: _selectedLocation,
+                    value: _selectedCity,
                     hint: Text(
                       _currentCity ?? 'Select City',
                       style: TextStyle(
@@ -519,28 +751,23 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     onChanged: (String? newValue) {
                       setState(() {
-                        _selectedLocation = newValue;
+                        _selectedCity = newValue;
                         _fetchGigs();
                       });
                     },
-                    items: [
-                      DropdownMenuItem<String>(
-                        value: null,
-                        child: Text('All Cities'),
-                      ),
-                      ..._locations.map<DropdownMenuItem<String>>((
-                        String value,
-                      ) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                    ],
+                    items: _cityOptions.map<DropdownMenuItem<String>>((
+                      String value,
+                    ) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
                   ),
                 ],
               ),
               centerTitle: false,
+              titleSpacing: 8, // Tighter top-left feel
               backgroundColor: Colors.transparent,
               elevation: 0,
               actions: [
@@ -582,6 +809,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       await _fetchLocations();
                     },
                     child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -589,11 +817,16 @@ class _HomeScreenState extends State<HomeScreen> {
                           // Search Bar
                           TextField(
                             controller: _searchController,
+                            textInputAction: TextInputAction.search,
+                            onSubmitted: (_) => _fetchGigs(),
                             decoration: InputDecoration(
-                              hintText: 'Search jobs near you',
-                              prefixIcon: const Icon(
-                                Icons.search,
-                                color: AppColors.primary,
+                              hintText: _searchHints[_currentHintIndex],
+                              prefixIcon: IconButton(
+                                icon: const Icon(
+                                  Icons.search,
+                                  color: AppColors.primary,
+                                ),
+                                onPressed: _fetchGigs,
                               ),
                               suffixIcon: _searchController.text.isNotEmpty
                                   ? IconButton(
@@ -651,7 +884,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       : 0.0;
                                   final isFull =
                                       gig.bookedSlots >= gig.totalSlots;
-                                  final isAlmostFull = fillPercentage >= 0.7;
+                                  final isAlmostFull = fillPercentage >= 0.8;
                                   final isHighDemand = fillPercentage >= 0.5;
                                   final isFillingFast = fillPercentage >= 0.3;
 
@@ -668,9 +901,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ); // Orange
                                   } else if (isHighDemand) {
                                     badgeText = 'High Demand';
-                                    badgeColor = const Color(
-                                      0xFF6200EE,
-                                    ); // Purple
+                                    badgeColor = AppColors.primary;
                                   } else if (isFillingFast) {
                                     badgeText = 'Filling Fast';
                                     badgeColor = const Color(
@@ -698,7 +929,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   } else if (platform.contains('zepto')) {
                                     brandBgColor = Colors.grey.shade100;
                                     brandBorderColor = Colors.transparent;
-                                    brandTextColor = const Color(0xFF6200EE);
+                                    brandTextColor = AppColors.primary;
                                   }
 
                                   return Opacity(
@@ -817,7 +1048,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 valueColor:
                                                     const AlwaysStoppedAnimation<
                                                       Color
-                                                    >(Color(0xFF6200EE)),
+                                                    >(AppColors.primary),
                                                 minHeight: 6,
                                               ),
                                             ),
@@ -839,9 +1070,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                         _fetchGigs();
                                                       },
                                                 style: ElevatedButton.styleFrom(
-                                                  backgroundColor: const Color(
-                                                    0xFF6200EE,
-                                                  ),
+                                                  backgroundColor:
+                                                      AppColors.primary,
                                                   foregroundColor: Colors.white,
                                                   disabledBackgroundColor:
                                                       Colors.grey.shade300,
@@ -991,7 +1221,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 : 'Full')
                                           : null,
                                       slotsInfo:
-                                          '$availableSlots/${gig.totalSlots} slots available',
+                                          '${gig.bookedSlots}/${gig.totalSlots} slots filled',
                                       onTap: isDisabled
                                           ? null
                                           : () async {
@@ -1003,6 +1233,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                               // Refresh gigs after returning from details
                                               _fetchGigs();
                                             },
+                                      date: DateFormat(
+                                        'MMM dd, yyyy',
+                                      ).format(gig.startTime),
                                     ),
                                   ),
                                 );
@@ -1014,7 +1247,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   )
           : _selectedIndex == 1
           ? const MyGigsScreen()
-          : const ProfileScreen(),
+          : ProfileScreen(key: _profileKey),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,

@@ -11,6 +11,7 @@ class JobCard extends StatelessWidget {
   final String? badgeText;
   final String? status;
   final String? slotsInfo;
+  final String date;
   final VoidCallback? onTap;
 
   const JobCard({
@@ -21,6 +22,7 @@ class JobCard extends StatelessWidget {
     required this.location,
     required this.tags,
     required this.logoColor,
+    required this.date,
     this.badgeText,
     this.status,
     this.slotsInfo,
@@ -166,6 +168,24 @@ class JobCard extends StatelessWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Icon(
+                  Icons.calendar_today_outlined,
+                  size: 14,
+                  color: AppColors.textSecondary,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  date,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
             if (slotsInfo != null) ...[
               const SizedBox(height: 8),
               Container(
@@ -226,11 +246,11 @@ class JobCard extends StatelessWidget {
   }
 
   Color _getBadgeColor(String? text) {
-    if (text == null) return Colors.purple;
+    if (text == null) return Colors.blue;
     if (text == 'Booked') return Colors.green;
     if (text == 'Full') return Colors.red;
-    if (text == 'Filling Fast' || text == 'Almost Full') return Colors.purple;
-    return Colors.purple;
+    if (text == 'Filling Fast' || text == 'Almost Full') return Colors.blue;
+    return Colors.blue;
   }
 
   IconData _getBadgeIcon(String? text) {
