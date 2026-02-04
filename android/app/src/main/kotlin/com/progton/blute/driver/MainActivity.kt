@@ -1,4 +1,4 @@
-package com.example.blute_mobile
+package com.progton.blute.driver
 
 import io.flutter.embedding.android.FlutterActivity
 

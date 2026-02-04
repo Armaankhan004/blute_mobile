@@ -28,5 +28,11 @@ class TogglePartnerSelection extends UploadEvent {
 }
 
 class SubmitUploadImages extends UploadEvent {
-  const SubmitUploadImages();
+  final DateTime date;
+  final int deliveryCount;
+
+  const SubmitUploadImages({required this.date, required this.deliveryCount});
+
+  @override
+  List<Object> get props => [date, deliveryCount];
 }

@@ -20,6 +20,15 @@ class AuthOtpSent extends AuthState {
   List<Object> get props => [phoneNumber];
 }
 
+class AuthNavigateToRegister extends AuthState {
+  final String phoneNumber;
+
+  const AuthNavigateToRegister({required this.phoneNumber});
+
+  @override
+  List<Object> get props => [phoneNumber];
+}
+
 class AuthAuthenticated extends AuthState {}
 
 class AuthError extends AuthState {

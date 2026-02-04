@@ -13,6 +13,7 @@ class Gig extends Equatable {
   final int totalSlots;
   final int bookedSlots;
   final bool isActive;
+  final bool isBookedByCurrentUser;
 
   const Gig({
     required this.id,
@@ -27,6 +28,7 @@ class Gig extends Equatable {
     required this.totalSlots,
     required this.bookedSlots,
     required this.isActive,
+    this.isBookedByCurrentUser = false,
   });
 
   factory Gig.fromJson(Map<String, dynamic> json) {
@@ -37,12 +39,15 @@ class Gig extends Equatable {
       description: json['description'],
       earnings: json['earnings'],
       location: json['location'],
-      requirements: List<String>.from(json['requirements'] ?? []),
+      requirements: json['requirements'] is List
+          ? List<String>.from(json['requirements'])
+          : [],
       startTime: DateTime.parse(json['start_time']),
       endTime: DateTime.parse(json['end_time']),
       totalSlots: json['total_slots'],
       bookedSlots: json['booked_slots'],
       isActive: json['is_active'] ?? true,
+      isBookedByCurrentUser: json['is_booked_by_current_user'] ?? false,
     );
   }
 
@@ -54,6 +59,7 @@ class GigBooking extends Equatable {
   final String id;
   final String userId;
   final String gigId;
+  final String? slot; // The booked slot time (e.g., "5.00 PM")
   final String status;
   final DateTime createdAt;
   final Gig? gig;
@@ -62,6 +68,7 @@ class GigBooking extends Equatable {
     required this.id,
     required this.userId,
     required this.gigId,
+    this.slot,
     required this.status,
     required this.createdAt,
     this.gig,
@@ -72,6 +79,7 @@ class GigBooking extends Equatable {
       id: json['id'],
       userId: json['user_id'],
       gigId: json['gig_id'],
+      slot: json['slot'],
       status: json['status'],
       createdAt: DateTime.parse(json['created_at']),
       gig: json['gig'] != null ? Gig.fromJson(json['gig']) : null,

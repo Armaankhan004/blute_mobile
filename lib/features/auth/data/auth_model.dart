@@ -53,3 +53,29 @@ class OtpVerifyRequest {
 
   Map<String, dynamic> toJson() => {'phone_number': phoneNumber, 'otp': otp};
 }
+
+class VerifyOtpResponse {
+  final bool exists;
+  final String? accessToken;
+  final String? refreshToken;
+  final String? tokenType;
+  final String? phoneNumber;
+
+  VerifyOtpResponse({
+    required this.exists,
+    this.accessToken,
+    this.refreshToken,
+    this.tokenType,
+    this.phoneNumber,
+  });
+
+  factory VerifyOtpResponse.fromJson(Map<String, dynamic> json) {
+    return VerifyOtpResponse(
+      exists: json['exists'],
+      accessToken: json['access_token'],
+      refreshToken: json['refresh_token'],
+      tokenType: json['token_type'],
+      phoneNumber: json['phone_number'],
+    );
+  }
+}

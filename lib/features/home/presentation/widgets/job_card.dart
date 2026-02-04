@@ -9,6 +9,8 @@ class JobCard extends StatelessWidget {
   final List<String> tags;
   final Color logoColor;
   final String? badgeText;
+  final String? status;
+  final String? slotsInfo;
   final VoidCallback? onTap;
 
   const JobCard({
@@ -20,6 +22,8 @@ class JobCard extends StatelessWidget {
     required this.tags,
     required this.logoColor,
     this.badgeText,
+    this.status,
+    this.slotsInfo,
     this.onTap,
   });
 
@@ -75,28 +79,32 @@ class JobCard extends StatelessWidget {
                               fontSize: 12,
                             ),
                           ),
-                          if (badgeText != null)
+                          if (badgeText != null || status != null)
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 6,
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.purple.withOpacity(0.1),
+                                color: _getBadgeColor(
+                                  badgeText ?? status,
+                                ).withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Row(
                                 children: [
-                                  const Icon(
-                                    Icons.bolt,
+                                  Icon(
+                                    _getBadgeIcon(badgeText ?? status),
                                     size: 10,
-                                    color: Colors.purple,
+                                    color: _getBadgeColor(badgeText ?? status),
                                   ),
                                   const SizedBox(width: 2),
                                   Text(
-                                    badgeText!,
-                                    style: const TextStyle(
-                                      color: Colors.purple,
+                                    badgeText ?? status ?? '',
+                                    style: TextStyle(
+                                      color: _getBadgeColor(
+                                        badgeText ?? status,
+                                      ),
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -158,6 +166,35 @@ class JobCard extends StatelessWidget {
                 ),
               ],
             ),
+            if (slotsInfo != null) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.event_seat,
+                      size: 12,
+                      color: AppColors.primary,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      slotsInfo!,
+                      style: const TextStyle(
+                        color: AppColors.primary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 16),
             Wrap(
               spacing: 8,
@@ -186,5 +223,21 @@ class JobCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Color _getBadgeColor(String? text) {
+    if (text == null) return Colors.purple;
+    if (text == 'Booked') return Colors.green;
+    if (text == 'Full') return Colors.red;
+    if (text == 'Filling Fast' || text == 'Almost Full') return Colors.purple;
+    return Colors.purple;
+  }
+
+  IconData _getBadgeIcon(String? text) {
+    if (text == null) return Icons.bolt;
+    if (text == 'Booked') return Icons.check_circle;
+    if (text == 'Full') return Icons.block;
+    if (text == 'Filling Fast' || text == 'Almost Full') return Icons.bolt;
+    return Icons.bolt;
   }
 }

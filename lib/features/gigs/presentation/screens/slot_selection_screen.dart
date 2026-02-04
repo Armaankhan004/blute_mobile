@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:blute_mobile/core/theme/app_colors.dart';
 import 'package:blute_mobile/shared/widgets/custom_button.dart';
+import 'package:blute_mobile/features/gigs/data/gig_model.dart';
+import 'package:intl/intl.dart';
 
 class SlotSelectionScreen extends StatefulWidget {
   const SlotSelectionScreen({super.key});
@@ -12,17 +14,47 @@ class SlotSelectionScreen extends StatefulWidget {
 class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
   String? _selectedSlot;
 
-  final List<Map<String, dynamic>> _slots = [
-    {'time': '5.00 PM', 'isFull': false},
-    {'time': '5.45 PM', 'isFull': false},
-    {'time': '6.30 PM', 'isFull': false},
-    {'time': '7.15 PM', 'isFull': false},
-    {'time': '8.00 PM', 'isFull': false},
-    {'time': '8.45 PM', 'isFull': false},
-  ];
+  // Ideally this should be generated from gig.startTime and gig.endTime
+  // For now we keep the mock slots but valid for the UI
+  List<Map<String, dynamic>> _slots = [];
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _generateSlots();
+  }
+
+  void _generateSlots() {
+    final gig = ModalRoute.of(context)!.settings.arguments as Gig;
+    final List<Map<String, dynamic>> slots = [];
+
+    DateTime currentTime = gig.startTime;
+    while (currentTime.isBefore(gig.endTime)) {
+      // Format time as "5.00 PM"
+      String formattedTime = DateFormat('h.mm a').format(currentTime);
+
+      // Calculate isFull logic dynamically (for now just mock random or based on index)
+      // Here we will just keep the first slot full logic if needed, or make all available
+      // Since backend controls actual availability, UI availability could be mock or data driven
+      // For now, let's make no slots full to allow booking testing
+      bool isFull = false;
+
+      slots.add({'time': formattedTime, 'isFull': isFull});
+
+      // Increment by 45 minutes
+      currentTime = currentTime.add(const Duration(minutes: 45));
+    }
+
+    setState(() {
+      _slots = slots;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    // Get the Gig object from arguments
+    final gig = ModalRoute.of(context)!.settings.arguments as Gig;
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -42,6 +74,19 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
       ),
       body: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 8.0,
+            ),
+            child: Text(
+              "Gig: ${gig.title}",
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.grey,
+              ),
+            ),
+          ),
           Expanded(
             child: ListView.separated(
               padding: const EdgeInsets.all(24),
@@ -49,11 +94,8 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
               separatorBuilder: (context, index) => const SizedBox(height: 16),
               itemBuilder: (context, index) {
                 final slot = _slots[index];
-                /* Mocking one slot as full to match design example if needed, 
-                   but list above has all false. Let's make first one full programmatically 
-                   to demonstrate the UI state */
-                bool isFull =
-                    index == 0; // Mocking 5.00 PM as full as per design variant
+
+                bool isFull = slot['isFull'];
                 bool isSelected = _selectedSlot == slot['time'];
 
                 return Padding(
@@ -84,7 +126,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                                 ? Colors.grey.shade300
                                 : isSelected
                                 ? AppColors.primary
-                                : AppColors.primary.withOpacity(0.5),
+                                : AppColors.primary.withValues(alpha: 0.5),
                             width: isSelected ? 2 : 1,
                           ),
                           borderRadius: BorderRadius.circular(12),
@@ -148,7 +190,7 @@ class _SlotSelectionScreenState extends State<SlotSelectionScreen> {
                         Navigator.pushNamed(
                           context,
                           '/booking-confirmation',
-                          arguments: _selectedSlot,
+                          arguments: {'gig': gig, 'slot': _selectedSlot},
                         );
                       },
                 // Need to handle disabled state in CustomButton or wrap here

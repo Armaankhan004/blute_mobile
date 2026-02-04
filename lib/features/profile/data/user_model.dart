@@ -4,6 +4,10 @@ class UserResponse {
   final String? phoneNumber;
   final bool isVerified;
   final ProfileResponse? profile;
+  final String referralCode;
+  final int subscriptionCoins;
+  final int earnedCoins;
+  final int gigsCompleted;
 
   UserResponse({
     required this.id,
@@ -11,7 +15,14 @@ class UserResponse {
     this.phoneNumber,
     this.isVerified = false,
     this.profile,
+    required this.referralCode,
+    this.subscriptionCoins = 0,
+    this.earnedCoins = 0,
+    this.gigsCompleted = 0,
   });
+
+  // Helper to get total coins
+  int get totalCoins => subscriptionCoins + earnedCoins;
 
   factory UserResponse.fromJson(Map<String, dynamic> json) {
     return UserResponse(
@@ -22,6 +33,10 @@ class UserResponse {
       profile: json['profile'] != null
           ? ProfileResponse.fromJson(json['profile'])
           : null,
+      referralCode: json['referral_code'] ?? '',
+      subscriptionCoins: json['subscription_coins'] ?? 0,
+      earnedCoins: json['earned_coins'] ?? 0,
+      gigsCompleted: json['gigs_completed'] ?? 0,
     );
   }
 }

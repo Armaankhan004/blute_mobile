@@ -26,6 +26,12 @@ class _MyGigsScreenState extends State<MyGigsScreen> {
   }
 
   Future<void> _fetchBookings() async {
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+    }
     try {
       final bookings = await _gigDataSource.getMyBookings();
       final now = DateTime.now();
@@ -125,11 +131,23 @@ class _MyGigsScreenState extends State<MyGigsScreen> {
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : _error != null
-            ? Center(child: Text('Error: $_error'))
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('Error: $_error'),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _fetchBookings,
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              )
             : TabBarView(
                 children: [
-                  _GigList(bookings: _upcoming),
-                  _GigList(bookings: _past),
+                  _GigList(bookings: _upcoming, onRefresh: _fetchBookings),
+                  _GigList(bookings: _past, onRefresh: _fetchBookings),
                 ],
               ),
       ),
@@ -139,62 +157,79 @@ class _MyGigsScreenState extends State<MyGigsScreen> {
 
 class _GigList extends StatelessWidget {
   final List<GigBooking> bookings;
+  final Future<void> Function() onRefresh;
 
-  const _GigList({required this.bookings});
+  const _GigList({required this.bookings, required this.onRefresh});
 
   @override
   Widget build(BuildContext context) {
     if (bookings.isEmpty) {
-      return const Center(child: Text('No gigs found'));
+      return RefreshIndicator(
+        onRefresh: onRefresh,
+        child: ListView(
+          children: const [
+            SizedBox(height: 200),
+            Center(child: Text('No gigs found')),
+          ],
+        ),
+      );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: bookings.length,
-      itemBuilder: (context, index) {
-        final booking = bookings[index];
-        final gig = booking.gig!;
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: bookings.length,
+        itemBuilder: (context, index) {
+          final booking = bookings[index];
+          final gig = booking.gig!;
 
-        // Format time display
-        String timeDisplay;
-        final now = DateTime.now();
-        final isToday =
-            gig.startTime.year == now.year &&
-            gig.startTime.month == now.month &&
-            gig.startTime.day == now.day;
+          // Format time display
+          String timeDisplay;
+          final now = DateTime.now();
+          final isToday =
+              gig.startTime.year == now.year &&
+              gig.startTime.month == now.month &&
+              gig.startTime.day == now.day;
 
-        final timeFormat = DateFormat('h a'); // 5 PM
-        final dateFormat = DateFormat('dd-MM-yyyy');
+          final timeFormat = DateFormat('h a'); // 5 PM
+          final dateFormat = DateFormat('dd-MM-yyyy');
 
-        if (isToday) {
-          timeDisplay = 'Today ${timeFormat.format(gig.startTime)}';
-        } else {
-          timeDisplay =
-              '${dateFormat.format(gig.startTime)}(${timeFormat.format(gig.startTime)})';
-        }
+          if (isToday) {
+            timeDisplay = 'Today ${timeFormat.format(gig.startTime)}';
+          } else {
+            timeDisplay =
+                '${dateFormat.format(gig.startTime)}(${timeFormat.format(gig.startTime)})';
+          }
 
-        // Map platform to color (Simple logic for now)
-        Color logoColor = Colors.blue;
-        final platform = gig.platform.toLowerCase();
-        if (platform.contains('blinkit'))
-          logoColor = Colors.amber;
-        else if (platform.contains('zepto'))
-          logoColor = Colors.purple;
-        else if (platform.contains('dunzo'))
-          logoColor = Colors.green;
-        else if (platform.contains('swiggy'))
-          logoColor = Colors.orange;
-        else if (platform.contains('uber'))
-          logoColor = Colors.greenAccent;
+          // Map platform to color (Simple logic for now)
+          Color logoColor = Colors.blue;
+          final platform = gig.platform.toLowerCase();
+          if (platform.contains('blinkit'))
+            logoColor = Colors.amber;
+          else if (platform.contains('zepto'))
+            logoColor = Colors.purple;
+          else if (platform.contains('dunzo'))
+            logoColor = Colors.green;
+          else if (platform.contains('swiggy'))
+            logoColor = Colors.orange;
+          else if (platform.contains('uber'))
+            logoColor = Colors.greenAccent;
 
-        return GigCard(
-          companyName: gig.platform,
-          role: gig.title,
-          time: timeDisplay,
-          status: booking.status, // e.g. BOOKED -> Registered?
-          logoColor: logoColor,
-        );
-      },
+          return GestureDetector(
+            onTap: () {
+              Navigator.pushNamed(context, '/slot-details', arguments: gig);
+            },
+            child: GigCard(
+              companyName: gig.platform,
+              role: gig.title,
+              time: timeDisplay,
+              status: booking.status,
+              logoColor: logoColor,
+            ),
+          );
+        },
+      ),
     );
   }
 }

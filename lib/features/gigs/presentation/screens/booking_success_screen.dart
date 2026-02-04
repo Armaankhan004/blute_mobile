@@ -67,19 +67,6 @@ class BookingSuccessScreen extends StatelessWidget {
                   },
                 ),
               ),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () {
-                  // Share logic
-                },
-                child: const Text(
-                  'Share',
-                  style: TextStyle(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
               const Spacer(),
             ],
           ),

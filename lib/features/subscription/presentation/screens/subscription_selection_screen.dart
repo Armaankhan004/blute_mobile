@@ -151,7 +151,7 @@ class _SubscriptionSelectionContent extends StatelessWidget {
                     return SizedBox(
                       width: double.infinity,
                       child: CustomButton(
-                        text: 'Proceed to Pay',
+                        text: 'Confirm Subscription',
                         isLoading: state is SubscriptionPaymentLoading,
                         onPressed: () {
                           context.read<SubscriptionBloc>().add(

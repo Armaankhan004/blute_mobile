@@ -5,6 +5,7 @@ import 'package:blute_mobile/core/theme/app_colors.dart';
 import 'package:blute_mobile/shared/widgets/custom_button.dart';
 import 'package:blute_mobile/core/di/injection_container.dart' as di;
 import 'package:blute_mobile/features/profile/presentation/bloc/upload/upload_bloc.dart';
+import 'package:intl/intl.dart';
 
 class UploadScreenshotsScreen extends StatelessWidget {
   const UploadScreenshotsScreen({super.key});
@@ -18,8 +19,24 @@ class UploadScreenshotsScreen extends StatelessWidget {
   }
 }
 
-class _UploadScreenshotsContent extends StatelessWidget {
+class _UploadScreenshotsContent extends StatefulWidget {
   const _UploadScreenshotsContent();
+
+  @override
+  State<_UploadScreenshotsContent> createState() =>
+      _UploadScreenshotsContentState();
+}
+
+class _UploadScreenshotsContentState extends State<_UploadScreenshotsContent> {
+  DateTime? _selectedDate;
+  final TextEditingController _deliveryCountController =
+      TextEditingController();
+
+  @override
+  void dispose() {
+    _deliveryCountController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -90,7 +107,7 @@ class _UploadScreenshotsContent extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Upload Screenshots',
+                    'Upload Delivery Earnings',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -129,6 +146,84 @@ class _UploadScreenshotsContent extends StatelessWidget {
                             );
                           }
                         },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Date',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () async {
+                      final DateTime? picked = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.now(),
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now(),
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          _selectedDate = picked;
+                        });
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade300),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            _selectedDate != null
+                                ? DateFormat(
+                                    'MMM dd, yyyy',
+                                  ).format(_selectedDate!)
+                                : 'Select Date',
+                            style: TextStyle(
+                              color: _selectedDate != null
+                                  ? Colors.black
+                                  : Colors.grey,
+                            ),
+                          ),
+                          const Icon(Icons.calendar_today, size: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Number of Deliveries',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _deliveryCountController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: 'Enter number of deliveries',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: AppColors.primary),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
                       ),
                     ),
                   ),
@@ -268,12 +363,21 @@ class _UploadScreenshotsContent extends StatelessWidget {
                       text: 'Upload Screenshots',
                       isLoading: isLoading,
                       onPressed:
-                          uploadedImages.isNotEmpty && selectedPartner != null
+                          uploadedImages.isNotEmpty &&
+                              selectedPartner != null &&
+                              _selectedDate != null &&
+                              _deliveryCountController.text.trim().isNotEmpty
                           ? () => context.read<UploadBloc>().add(
-                              const SubmitUploadImages(),
+                              SubmitUploadImages(
+                                date: _selectedDate!,
+                                deliveryCount:
+                                    int.tryParse(
+                                      _deliveryCountController.text.trim(),
+                                    ) ??
+                                    0,
+                              ),
                             )
                           : null,
-                      icon: Icons.arrow_forward,
                     ),
                   ),
                 ],

@@ -54,13 +54,13 @@ class AuthRemoteDataSource {
     }
   }
 
-  Future<AuthResponse> verifyOtp(String phoneNumber, String otp) async {
+  Future<VerifyOtpResponse> verifyOtp(String phoneNumber, String otp) async {
     try {
       final response = await _dioClient.dio.post(
         ApiConfig.verifyOtp,
         data: OtpVerifyRequest(phoneNumber: phoneNumber, otp: otp).toJson(),
       );
-      return AuthResponse.fromJson(response.data);
+      return VerifyOtpResponse.fromJson(response.data);
     } catch (e) {
       if (e is DioException) {
         throw e;

@@ -44,6 +44,7 @@ class MyApp extends StatelessWidget {
         routes: {
           '/login': (context) => const LoginScreen(),
           '/otp': (context) => const OtpScreen(),
+          '/register': (context) => const ProfileSetupScreen(),
           '/profile-setup': (context) => ProfileSetupScreen(),
           '/document-upload': (context) => DocumentUploadScreen(),
           '/bank-details': (context) => const BankDetailsScreen(),

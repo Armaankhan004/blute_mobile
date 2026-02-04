@@ -78,10 +78,13 @@ class _OtpScreenState extends State<OtpScreen> {
           SharedPreferences.getInstance().then((prefs) {
             prefs.setBool('isLoggedIn', true);
           });
-          Navigator.pushReplacementNamed(context, '/profile-setup');
-          ScaffoldMessenger.of(
+          Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+        } else if (state is AuthNavigateToRegister) {
+          Navigator.pushNamed(
             context,
-          ).showSnackBar(const SnackBar(content: Text('OTP Verified!')));
+            '/register',
+            arguments: state.phoneNumber,
+          );
         } else if (state is AuthError) {
           ScaffoldMessenger.of(
             context,

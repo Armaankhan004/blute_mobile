@@ -1,5 +1,6 @@
 class ApiConfig {
-  static const String baseUrl = 'http://127.0.0.1:8000/api/v1';
+  static const String baseUrl =
+      'https://exemplificative-nonmodificatory-usha.ngrok-free.dev/api/v1';
 
   // Auth
   static const String login = '/auth/login';
@@ -21,6 +22,6 @@ class ApiConfig {
   static const String subscribe = '/subscriptions/subscribe';
 
   // Gigs
-  static const String gigs = '/gigs';
+  static const String gigs = '/gigs/';
   static const String myBookings = '/gigs/my-bookings';
 }

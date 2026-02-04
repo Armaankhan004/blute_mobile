@@ -1,6 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:blute_mobile/features/profile/data/upload_remote_datasource.dart';
 
 part 'upload_event.dart';
 part 'upload_state.dart';
@@ -8,8 +9,11 @@ part 'upload_state.dart';
 class UploadBloc extends Bloc<UploadEvent, UploadState> {
   final List<String> _uploadedImages = [];
   String? _selectedPartner;
+  final UploadRemoteDataSource _dataSource;
 
-  UploadBloc() : super(UploadInitial()) {
+  UploadBloc({UploadRemoteDataSource? dataSource})
+    : _dataSource = dataSource ?? UploadRemoteDataSource(),
+      super(UploadInitial()) {
     on<PickUploadImages>(_onPickUploadImages);
     on<RemoveUploadImage>(_onRemoveUploadImage);
     on<TogglePartnerSelection>(_onTogglePartnerSelection);
@@ -37,12 +41,6 @@ class UploadBloc extends Bloc<UploadEvent, UploadState> {
       }
     } catch (e) {
       emit(UploadError('Error picking images: $e'));
-      // Re-emit state so UI doesn't stay in error if needed, or just let UI handle it.
-      // Ideally we want to show snackbar but keep "Updated" state visible.
-      // For simplicity, we emit Updated again after a momentary error could be tricky without listener.
-      // We'll rely on BlocListener in UI to show snackbar for Error state, and then we might need to verify if we lost state.
-      // Better: Emit error, let UI show it, UI stays on screen. But if we emit Error, build might change.
-      // We should probably emit state update after error if we want to preserve UI.
     }
   }
 
@@ -80,9 +78,6 @@ class UploadBloc extends Bloc<UploadEvent, UploadState> {
   ) async {
     if (_selectedPartner == null) {
       emit(const UploadError('Please select a partner'));
-      // Re-emit state to reset UI from error state?
-      // We will emit Updated right after so the UI rebuilds correctly if it was replaced by error widget
-      // But usually we use Listener for errors.
       emit(
         UploadUpdated(
           images: List.from(_uploadedImages),
@@ -105,12 +100,27 @@ class UploadBloc extends Bloc<UploadEvent, UploadState> {
 
     emit(UploadLoading());
 
-    // Simulate upload
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      // Upload all screenshots with partner data
+      final coinsEarned = await _dataSource.uploadScreenshots(
+        partner: _selectedPartner!,
+        date: event.date,
+        deliveryCount: event.deliveryCount,
+        filePaths: _uploadedImages,
+      );
 
-    emit(UploadSuccess(_uploadedImages.length));
+      _uploadedImages.clear();
+      _selectedPartner = null;
 
-    // Clear after success? Or keep?
-    // Usually we navigate away or show dialog. State stays Success until reset.
+      emit(UploadSuccess(coinsEarned));
+    } catch (e) {
+      emit(UploadError('Upload failed: ${e.toString()}'));
+      emit(
+        UploadUpdated(
+          images: List.from(_uploadedImages),
+          selectedPartner: _selectedPartner,
+        ),
+      );
+    }
   }
 }

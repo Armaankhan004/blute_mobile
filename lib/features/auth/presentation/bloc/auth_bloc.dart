@@ -49,9 +49,25 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         event.phoneNumber,
         event.otp,
       );
-      await _tokenStorage.saveToken(response.accessToken);
-      await _tokenStorage.saveRefreshToken(response.refreshToken);
-      emit(AuthAuthenticated());
+
+      if (response.accessToken != null && response.refreshToken != null) {
+        await _tokenStorage.saveToken(response.accessToken!);
+        await _tokenStorage.saveRefreshToken(response.refreshToken!);
+      } else {
+        emit(const AuthError('Authentication failed: Missing tokens'));
+        return;
+      }
+
+      if (response.exists) {
+        emit(AuthAuthenticated());
+      } else {
+        // User is new (but now authenticated), navigate to registration
+        emit(
+          AuthNavigateToRegister(
+            phoneNumber: response.phoneNumber ?? event.phoneNumber,
+          ),
+        );
+      }
     } catch (e) {
       String message = 'Verification failed';
       if (e is DioException) {
