@@ -12,8 +12,8 @@ class GigRemoteDataSource {
   // Fetch active gigs with optional search/filter/sort
   Future<List<Gig>> getActiveGigs({
     String? searchQuery,
-    String? platform,
-    String? location,
+    List<String>? platform,
+    List<String>? location,
     String? sortBy,
     String? shift,
     DateTime? date,
@@ -24,10 +24,10 @@ class GigRemoteDataSource {
       if (searchQuery != null && searchQuery.isNotEmpty) {
         queryParams['search'] = searchQuery;
       }
-      if (platform != null) {
+      if (platform != null && platform.isNotEmpty) {
         queryParams['platform'] = platform;
       }
-      if (location != null) {
+      if (location != null && location.isNotEmpty) {
         queryParams['location'] = location;
       }
       if (sortBy != null) {
@@ -57,6 +57,20 @@ class GigRemoteDataSource {
       if (e is DioException) {
         throw ServerException(message: e.message ?? 'Failed to fetch gigs');
       }
+      rethrow;
+    }
+  }
+
+  // Fetch unique platforms
+  Future<List<String>> getPlatforms() async {
+    try {
+      final response = await _dioClient.dio.get('${ApiConfig.gigs}/platforms');
+      if (response.data is! List) {
+        throw Exception('Unexpected response format for platforms');
+      }
+      return List<String>.from(response.data);
+    } catch (e) {
+      print('ERROR: Failed to fetch platforms: $e');
       rethrow;
     }
   }

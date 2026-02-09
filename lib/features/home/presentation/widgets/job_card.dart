@@ -7,7 +7,6 @@ class JobCard extends StatelessWidget {
   final String salary;
   final String location;
   final List<String> tags;
-  final Color logoColor;
   final String? badgeText;
   final String? status;
   final String? slotsInfo;
@@ -21,7 +20,6 @@ class JobCard extends StatelessWidget {
     required this.salary,
     required this.location,
     required this.tags,
-    required this.logoColor,
     required this.date,
     this.badgeText,
     this.status,
@@ -57,13 +55,17 @@ class JobCard extends StatelessWidget {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: logoColor,
+                    color:
+                        Colors.white, // Changed to white to show logo clearly
                     borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Colors.grey.shade200,
+                    ), // Add border
                   ),
                   alignment: Alignment.center,
-                  child: Text(
-                    companyName.substring(0, 1).toUpperCase(),
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: _buildLogo(companyName),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -259,5 +261,44 @@ class JobCard extends StatelessWidget {
     if (text == 'Full') return Icons.block;
     if (text == 'Filling Fast' || text == 'Almost Full') return Icons.bolt;
     return Icons.bolt;
+  }
+
+  Widget _buildLogo(String companyName) {
+    final name = companyName.toLowerCase();
+    String? assetPath;
+
+    if (name.contains('swiggy')) {
+      assetPath = 'assets/logos/swiggy.png';
+    } else if (name.contains('zomato')) {
+      assetPath = 'assets/logos/Zomato.png';
+    } else if (name.contains('blinkit')) {
+      assetPath = 'assets/logos/blinkit.png';
+    } else if (name.contains('zepto')) {
+      assetPath = 'assets/logos/zepto.png';
+    } else if (name.contains('amazon')) {
+      assetPath = 'assets/logos/amazonfresh.png';
+    } else if (name.contains('firstclub')) {
+      assetPath = 'assets/logos/firstclub.png';
+    }
+
+    if (assetPath != null) {
+      return Image.asset(
+        assetPath,
+        width: 40,
+        height: 40,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          return Text(
+            companyName.substring(0, 1).toUpperCase(),
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          );
+        },
+      );
+    }
+
+    return Text(
+      companyName.substring(0, 1).toUpperCase(),
+      style: const TextStyle(fontWeight: FontWeight.bold),
+    );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:blute_mobile/core/theme/app_colors.dart';
 import 'package:blute_mobile/features/home/presentation/widgets/job_card.dart';
 import 'package:blute_mobile/features/gigs/presentation/screens/my_gigs_screen.dart';
+import 'package:blute_mobile/features/contests/presentation/screens/contest_details_screen.dart';
 import 'package:blute_mobile/features/profile/presentation/screens/profile_screen.dart';
 import 'package:intl/intl.dart';
 
@@ -28,9 +29,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Search and filter state
   final TextEditingController _searchController = TextEditingController();
-  String? _selectedPlatform;
+  List<String> _selectedPlatforms = [];
   String? _selectedCity; // Top-left city selection
-  String? _selectedLocation; // Area selection from filters
+  List<String> _selectedLocations = []; // Area selection from filters
   String? _currentCity; // Auto-detected city
   String? _selectedSort;
   String? _selectedShift; // 'day' or 'night'
@@ -40,22 +41,15 @@ class _HomeScreenState extends State<HomeScreen> {
   Timer? _debounce;
 
   // Temporary filter state (for Apply button)
-  String? _tempPlatform;
-  String? _tempLocation;
+  List<String> _tempPlatforms = [];
+  List<String> _tempLocations = [];
   String? _tempSort;
   String? _tempShift;
   DateTime? _tempDate;
   double _tempDistance = 50.0;
   String? _tempDemand;
 
-  final List<String> _platformOptions = [
-    'blinkit',
-    'zepto',
-    'swiggy',
-    'zomato',
-    'dunzo',
-    'uber',
-  ];
+  List<String> _platformOptions = []; // Dynamic platforms from API
   List<String> _locations = []; // Dynamic locations (Areas) from API
   final List<String> _cityOptions = [
     'Bangalore',
@@ -78,7 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
     'Search "Swiggy"',
     'Search "MG Road"',
     'Search pincode',
-    'Search "Dunzo"',
+    'Search "FirstClub"',
     'Search "Blinkit"',
     'Search "Zomato"',
   ];
@@ -89,6 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _startHintTimer();
     _initLocation();
+    _fetchPlatforms();
     _fetchLocations();
     _hasInitiallyFetched = true;
   }
@@ -148,10 +143,12 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       var gigs = await _gigDataSource.getActiveGigs(
         searchQuery: _searchController.text,
-        platform: _selectedPlatform,
-        // If specific area (_selectedLocation) is chosen, use it.
+        platform: _selectedPlatforms,
+        // If specific areas (_selectedLocations) are chosen, use them.
         // Otherwise, use the selected city.
-        location: _selectedLocation ?? _selectedCity,
+        location: _selectedLocations.isNotEmpty
+            ? _selectedLocations
+            : (_selectedCity != null ? [_selectedCity!] : null),
         sortBy: _selectedSort,
         shift: _selectedShift,
         date: _selectedDate,
@@ -206,6 +203,19 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _fetchPlatforms() async {
+    try {
+      final platforms = await _gigDataSource.getPlatforms();
+      if (mounted) {
+        setState(() {
+          _platformOptions = platforms;
+        });
+      }
+    } catch (e) {
+      print('DEBUG: Failed to fetch platforms: $e');
+    }
+  }
+
   Future<void> _fetchLocations() async {
     try {
       final locations = await _gigDataSource.getLocations();
@@ -224,30 +234,20 @@ class _HomeScreenState extends State<HomeScreen> {
       _selectedIndex = index;
     });
     // Refresh profile whenever the profile tab is selected
-    if (index == 2) {
+    if (index == 3) {
       _profileKey.currentState?.fetchProfile();
     }
   }
 
-  Color _getLogoColor(String platform) {
-    final p = platform.toLowerCase();
-    if (p.contains('swiggy')) return Colors.orange;
-    if (p.contains('zomato')) return Colors.red;
-    if (p.contains('uber')) return Colors.black;
-    if (p.contains('blinkit')) return Colors.yellow.shade700;
-    if (p.contains('zepto')) return Colors.blue;
-    if (p.contains('dunzo')) return const Color(0xFF00FF00); // Dunzo green
-    return AppColors.primary;
-  }
-
   void _showSortFilter(BuildContext context) {
     // Initialize temp values with current selections
-    _tempPlatform = _selectedPlatform;
-    _tempLocation = _selectedLocation;
+    _tempPlatforms = List.from(_selectedPlatforms);
+    _tempLocations = List.from(_selectedLocations);
     _tempSort = _selectedSort;
     _tempShift = _selectedShift;
     _tempDistance = _selectedDistance;
     _tempDemand = _selectedDemand;
+    _tempDate = _selectedDate;
 
     showModalBottomSheet(
       context: context,
@@ -291,8 +291,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           onPressed: () {
                             setState(() {
-                              _selectedPlatform = _tempPlatform;
-                              _selectedLocation = _tempLocation;
+                              _selectedPlatforms = _tempPlatforms;
+                              _selectedLocations = _tempLocations;
                               _selectedSort = _tempSort;
                               _selectedShift = _tempShift;
                               _selectedDate = _tempDate;
@@ -412,11 +412,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       spacing: 8,
                       runSpacing: 8,
                       children: _platformOptions.map((platform) {
-                        final isSelected = _tempPlatform == platform;
+                        final isSelected = _tempPlatforms.contains(platform);
                         return GestureDetector(
                           onTap: () {
                             setModalState(() {
-                              _tempPlatform = isSelected ? null : platform;
+                              if (isSelected) {
+                                _tempPlatforms.remove(platform);
+                              } else {
+                                _tempPlatforms.add(platform);
+                              }
                             });
                           },
                           child: Container(
@@ -437,7 +441,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                             child: Text(
-                              platform.toUpperCase(),
+                              platform, // Originally toUpperCase(), but backend data might differ
                               style: TextStyle(
                                 color: isSelected
                                     ? Colors.white
@@ -465,11 +469,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       spacing: 8,
                       runSpacing: 8,
                       children: _locations.map((location) {
-                        final isSelected = _tempLocation == location;
+                        final isSelected = _tempLocations.contains(location);
                         return GestureDetector(
                           onTap: () {
                             setModalState(() {
-                              _tempLocation = isSelected ? null : location;
+                              if (isSelected) {
+                                _tempLocations.remove(location);
+                              } else {
+                                _tempLocations.add(location);
+                              }
                             });
                           },
                           child: Container(
@@ -916,22 +924,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                   final isDisabled =
                                       gig.isBookedByCurrentUser || isFull;
 
-                                  // Brand-specific colors
-                                  Color brandBgColor = Colors.grey.shade100;
-                                  Color brandBorderColor = Colors.blue;
-                                  Color brandTextColor = Colors.black;
-
-                                  final platform = gig.platform.toLowerCase();
-                                  if (platform.contains('blinkit')) {
-                                    brandBgColor = const Color(0xFFFFC107);
-                                    brandBorderColor = const Color(0xFF2196F3);
-                                    brandTextColor = Colors.black;
-                                  } else if (platform.contains('zepto')) {
-                                    brandBgColor = Colors.grey.shade100;
-                                    brandBorderColor = Colors.transparent;
-                                    brandTextColor = AppColors.primary;
-                                  }
-
                                   return Opacity(
                                     opacity: isDisabled ? 0.6 : 1.0,
                                     child: Padding(
@@ -980,23 +972,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                               width: 80,
                                               height: 80,
                                               decoration: BoxDecoration(
-                                                color: brandBgColor,
+                                                color: Colors.white,
                                                 borderRadius:
                                                     BorderRadius.circular(10),
                                                 border: Border.all(
-                                                  color: brandBorderColor,
+                                                  color: Colors.grey.shade200,
                                                   width: 2,
                                                 ),
                                               ),
                                               alignment: Alignment.center,
-                                              child: Text(
-                                                gig.platform.toLowerCase(),
-                                                style: TextStyle(
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: brandTextColor,
-                                                ),
-                                                textAlign: TextAlign.center,
+                                              padding: const EdgeInsets.all(8),
+                                              child: _buildPlatformLogo(
+                                                gig.platform,
                                               ),
                                             ),
                                             const SizedBox(height: 12),
@@ -1196,8 +1183,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                 final isDisabled =
                                     gig.isBookedByCurrentUser ||
                                     (gig.bookedSlots >= gig.totalSlots);
-                                final availableSlots =
-                                    gig.totalSlots - gig.bookedSlots;
 
                                 return Padding(
                                   padding: const EdgeInsets.only(
@@ -1214,7 +1199,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                       tags: gig.requirements.isNotEmpty
                                           ? gig.requirements
                                           : ['Delivery Job'],
-                                      logoColor: _getLogoColor(gig.platform),
                                       status: isDisabled
                                           ? (gig.isBookedByCurrentUser
                                                 ? 'Booked'
@@ -1246,6 +1230,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   )
           : _selectedIndex == 1
+          ? const ContestDetailsScreen()
+          : _selectedIndex == 2
           ? const MyGigsScreen()
           : ProfileScreen(key: _profileKey),
       bottomNavigationBar: BottomNavigationBar(
@@ -1258,6 +1244,10 @@ class _HomeScreenState extends State<HomeScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(
+            icon: Icon(Icons.emoji_events_outlined),
+            label: 'Contests',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.work_outline),
             label: 'My Gigs',
           ), // Icon looked like a briefcase
@@ -1267,6 +1257,43 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPlatformLogo(String companyName) {
+    final name = companyName.toLowerCase();
+    String? assetPath;
+
+    if (name.contains('swiggy')) {
+      assetPath = 'assets/logos/swiggy.png';
+    } else if (name.contains('zomato')) {
+      assetPath = 'assets/logos/Zomato.png';
+    } else if (name.contains('blinkit')) {
+      assetPath = 'assets/logos/blinkit.png';
+    } else if (name.contains('zepto')) {
+      assetPath = 'assets/logos/zepto.png';
+    } else if (name.contains('amazon')) {
+      assetPath = 'assets/logos/amazonfresh.png';
+    } else if (name.contains('firstclub')) {
+      assetPath = 'assets/logos/firstclub.png';
+    }
+
+    if (assetPath != null) {
+      return Image.asset(
+        assetPath,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          return Text(
+            companyName.substring(0, 1).toUpperCase(),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+          );
+        },
+      );
+    }
+
+    return Text(
+      companyName.substring(0, 1).toUpperCase(),
+      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
     );
   }
 }

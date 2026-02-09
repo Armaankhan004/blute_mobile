@@ -12,6 +12,8 @@ import 'package:blute_mobile/features/onboarding/presentation/screens/success_sc
 import 'package:blute_mobile/features/profile/presentation/screens/update_profile_screen.dart';
 import 'package:blute_mobile/features/profile/presentation/screens/partner_ids_screen.dart';
 import 'package:blute_mobile/features/profile/presentation/screens/add_partner_id_screen.dart';
+import 'package:blute_mobile/features/contests/presentation/screens/contest_details_screen.dart';
+
 import 'package:blute_mobile/features/profile/data/user_model.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -67,6 +69,7 @@ class MyApp extends StatelessWidget {
           ),
           '/partner-ids': (context) => const PartnerIdsScreen(),
           '/add-partner-id': (context) => const AddPartnerIdScreen(),
+          '/contest-details': (context) => const ContestDetailsScreen(),
         },
         home: const SplashScreen(),
       ),
