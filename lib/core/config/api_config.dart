@@ -1,7 +1,7 @@
 class ApiConfig {
   // For Android Emulator use 10.0.2.2, for iOS Simulator use localhost
   // If using a physical device, replace with your machine's LAN IP (e.g., 192.168.1.x)
-  static const String baseUrl = 'https://unvisiting-domitila-uncaringly.ngrok-free.dev/api/v1';
+  static const String baseUrl = 'http://192.168.1.113:8000/api/v1';
 
   // Auth endpoints
   static const String login = '/driver/auth/login';
