@@ -1195,7 +1195,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       title: gig.title,
                                       salary:
                                           gig.earnings ?? 'Paid per delivery',
-                                      location: gig.location ?? 'Bangalore',
+                                      location: '${gig.location ?? 'Bangalore'}${gig.state != null ? ', ${gig.state}' : ''}',
                                       tags: gig.requirements.isNotEmpty
                                           ? gig.requirements
                                           : ['Delivery Job'],

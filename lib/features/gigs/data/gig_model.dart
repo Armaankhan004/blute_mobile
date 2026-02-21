@@ -7,6 +7,7 @@ class Gig extends Equatable {
   final String? description;
   final String? earnings;
   final String? location;
+  final String? state;
   final List<String> requirements;
   final DateTime startTime;
   final DateTime endTime;
@@ -28,6 +29,7 @@ class Gig extends Equatable {
     required this.totalSlots,
     required this.bookedSlots,
     required this.isActive,
+    this.state,
     this.isBookedByCurrentUser = false,
   });
 
@@ -46,6 +48,7 @@ class Gig extends Equatable {
       endTime: DateTime.parse(json['end_time']),
       totalSlots: json['total_slots'],
       bookedSlots: json['booked_slots'],
+      state: json['state'],
       isActive: json['is_active'] ?? true,
       isBookedByCurrentUser: json['is_booked_by_current_user'] ?? false,
     );

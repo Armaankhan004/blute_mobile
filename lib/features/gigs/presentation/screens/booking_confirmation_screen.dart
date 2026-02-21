@@ -155,7 +155,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
             Text(_formatReportingTime(selectedSlot)),
             const Divider(height: 32),
             _buildSectionSubtitle('Reporting Location'),
-            Text(gig.location ?? 'Various Locations'),
+            Text('${gig.location ?? 'Various Locations'}${gig.state != null ? ', ${gig.state}' : ''}'),
             const SizedBox(height: 48),
             SizedBox(
               width: double.infinity,

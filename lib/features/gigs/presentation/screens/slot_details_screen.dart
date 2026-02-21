@@ -202,7 +202,7 @@ class _SlotDetailsScreenState extends State<SlotDetailsScreen> {
             ),
             const SizedBox(height: 16),
             _buildSectionSubtitle('Locations'),
-            Text(gig.location ?? 'Various Locations'),
+            Text('${gig.location ?? 'Various Locations'}${gig.state != null ? ', ${gig.state}' : ''}'),
             const Divider(height: 32),
             _buildSectionTitle('Requirements'),
             const SizedBox(height: 16),
